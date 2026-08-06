@@ -1,0 +1,14 @@
+CHICANE: FULL THROTTLE 3D — install (2 minutes)
+
+The game ships as several zips because of a 30 MB per-file transfer limit.
+
+1. Put ALL the chicane zips in one folder and extract EVERY one of them
+   there. They all contain the same top-level "chicane3d" folder, so the
+   extractions merge into one complete project. (If your unzip tool asks
+   about merging folders, say yes/replace.)
+2. Download Godot 4.3 (standard, not .NET) from godotengine.org/download
+3. Open Godot -> Import -> pick chicane3d/project.godot -> Play (F5).
+   The first open imports the car models; give it a minute.
+
+If it opens black on an older PC: Project Settings -> Rendering ->
+Renderer -> switch Forward+ to Compatibility.

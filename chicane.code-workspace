@@ -1,0 +1,7 @@
+{
+  "folders": [ { "path": "." } ],
+  "settings": {
+    "files.exclude": { "**/.godot": true },
+    "godot_tools.editor_path": "/usr/local/bin/godot"
+  }
+}

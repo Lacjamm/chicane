@@ -1,0 +1,27 @@
+{
+  "name": "Chicane: Full Throttle 3D (Godot 4.3)",
+  "build": { "dockerfile": "Dockerfile" },
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "geequlim.godot-tools",
+        "alfish.godot-files",
+        "ms-python.python",
+        "anthropic.claude-code"
+      ],
+      "settings": {
+        "godot_tools.editor_path": "/usr/local/bin/godot",
+        "godot_tools.gdscript_lsp_server_port": 6005,
+        "files.eol": "\n"
+      }
+    }
+  },
+  "mounts": [
+    "source=chicane-claude-config,target=/home/vscode/.claude,type=volume"
+  ],
+  "postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/.claude && (godot --headless --path chicane3d --import || true)",
+  "remoteUser": "vscode"
+}

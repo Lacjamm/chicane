@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    { "label": "Godot: import assets",
+      "type": "shell",
+      "command": "godot --headless --path chicane3d --import",
+      "problemMatcher": [] },
+    { "label": "Test: validation suite (232 checks)",
+      "type": "shell",
+      "command": "godot --headless --path chicane3d scenes/tests/TestAll.tscn",
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": [] },
+    { "label": "Test: scripted bot races",
+      "type": "shell",
+      "command": "godot --headless --path chicane3d scenes/tests/TestRace.tscn",
+      "problemMatcher": [] },
+    { "label": "Benchmark: world gen + frame cost",
+      "type": "shell",
+      "command": "godot --headless --path chicane3d scenes/tests/Bench.tscn",
+      "problemMatcher": [] },
+    { "label": "Run game (xvfb, container — for smoke tests only)",
+      "type": "shell",
+      "command": "xvfb-run -a -s '-screen 0 1280x720x24' godot --path chicane3d --rendering-driver opengl3",
+      "problemMatcher": [] },
+    { "label": "Screenshot suite (xvfb)",
+      "type": "shell",
+      "command": "xvfb-run -a -s '-screen 0 1280x720x24' godot --path chicane3d --rendering-driver opengl3 scenes/tests/TestShot.tscn",
+      "problemMatcher": [] }
+  ]
+}
