@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>$GODOT_PROJECT_NAME</title>
+	<style>
+		html, body {
+			margin: 0; padding: 0; width: 100%; height: 100%;
+			background: #07050f; overflow: hidden;
+		}
+		#canvas {
+			display: block; outline: none;
+			width: 100%; height: 100%;
+			position: absolute; inset: 0;
+		}
+		#loader {
+			position: absolute; inset: 0; z-index: 10;
+			display: flex; flex-direction: column; align-items: center; justify-content: center;
+			background: radial-gradient(ellipse at 50% 40%, #171030 0%, #07050f 70%);
+			font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+			color: #cfd6e4; text-align: center;
+			transition: opacity 0.6s ease;
+		}
+		#loader.hidden { opacity: 0; pointer-events: none; }
+		.title {
+			font-size: clamp(48px, 10vw, 96px); font-weight: 800; letter-spacing: 0.04em;
+			color: #ff2bd6; text-shadow: 0 0 24px rgba(255, 43, 214, 0.55);
+			line-height: 1;
+		}
+		.subtitle {
+			font-size: clamp(16px, 3vw, 28px); font-weight: 600; letter-spacing: 0.35em;
+			color: #2ee3ff; text-shadow: 0 0 16px rgba(46, 227, 255, 0.5);
+			margin: 6px 0 42px;
+		}
+		.barwrap {
+			width: min(520px, 78vw); height: 14px; border-radius: 8px;
+			background: rgba(255, 255, 255, 0.08);
+			border: 1px solid rgba(46, 227, 255, 0.35);
+			overflow: hidden;
+		}
+		#bar {
+			height: 100%; width: 0%; border-radius: 8px;
+			background: linear-gradient(90deg, #ff2bd6, #2ee3ff);
+			box-shadow: 0 0 14px rgba(46, 227, 255, 0.7);
+			transition: width 0.2s ease;
+		}
+		#bar.indet {
+			width: 40%;
+			animation: slide 1.2s ease-in-out infinite alternate;
+		}
+		@keyframes slide { from { margin-left: 0; } to { margin-left: 60%; } }
+		#status {
+			margin-top: 16px; font-size: 15px; letter-spacing: 0.12em;
+			color: #9aa6bd; min-height: 20px;
+			animation: pulse 1.6s ease-in-out infinite;
+		}
+		@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.55; } }
+		#status.error { color: #ff5468; animation: none; }
+		#tip {
+			position: absolute; bottom: 7vh; left: 0; right: 0;
+			font-size: 14px; color: #6d7890; padding: 0 24px;
+		}
+		noscript { position: absolute; inset: 0; z-index: 20; background: #07050f;
+			color: #fff; display: flex; align-items: center; justify-content: center; }
+	</style>
+$GODOT_HEAD_INCLUDE
+</head>
+<body>
+	<canvas id="canvas">Your browser does not support the canvas element.</canvas>
+	<noscript>Chicane needs JavaScript enabled to run.</noscript>
+	<div id="loader">
+		<div class="title">CHICANE</div>
+		<div class="subtitle">FULL THROTTLE 3D</div>
+		<div class="barwrap"><div id="bar"></div></div>
+		<div id="status">WARMING UP THE ENGINE&hellip;</div>
+		<div id="tip"></div>
+	</div>
+	<script src="$GODOT_URL"></script>
+	<script>
+		const GODOT_CONFIG = $GODOT_CONFIG;
+		const GODOT_THREADS_ENABLED = $GODOT_THREADS_ENABLED;
+		const engine = new Engine(GODOT_CONFIG);
+
+		(function () {
+			const loader = document.getElementById("loader");
+			const bar = document.getElementById("bar");
+			const status = document.getElementById("status");
+			const tipEl = document.getElementById("tip");
+
+			const tips = [
+				"Tip: SPACE jumps — tap it again mid-air for a double jump.",
+				"Tip: hit [Q] in a race to bring up your weapon inventory.",
+				"Tip: [Z] engages warp speed — 10 seconds at triple velocity.",
+				"Tip: on EASY, [G] toggles GOD MODE and [Y] nukes the police.",
+				"Tip: pick your 3 weapons in Main Menu → WEAPONS.",
+				"Tip: shoot the roadside buildings — fuel tanks chain-explode.",
+				"Tip: hold CTRL and steer to drift.",
+				"First load downloads ~35 MB — it is cached for next time.",
+			];
+			let tipIdx = Math.floor(Math.random() * tips.length);
+			tipEl.textContent = tips[tipIdx];
+			const tipTimer = setInterval(() => {
+				tipIdx = (tipIdx + 1) % tips.length;
+				tipEl.textContent = tips[tipIdx];
+			}, 3600);
+
+			function setStatus(text) { status.textContent = text; }
+
+			function fail(err) {
+				bar.classList.remove("indet");
+				bar.style.width = "0%";
+				status.classList.add("error");
+				setStatus((err && err.message) ? err.message : String(err));
+				console.error(err);
+			}
+
+			function onProgress(current, total) {
+				if (total > 0) {
+					bar.classList.remove("indet");
+					const pct = Math.min((current / total) * 100, 100);
+					bar.style.width = pct.toFixed(1) + "%";
+					setStatus("DOWNLOADING " + (current / 1048576).toFixed(1) + " / "
+						+ (total / 1048576).toFixed(1) + " MB · " + Math.round(pct) + "%");
+				} else {
+					bar.classList.add("indet");
+					setStatus("DOWNLOADING…");
+				}
+			}
+
+			if (!Engine.isWebGLAvailable()) {
+				fail(new Error("WebGL is not available — try a different browser or enable hardware acceleration."));
+				return;
+			}
+			if (GODOT_THREADS_ENABLED && !window.crossOriginIsolated) {
+				fail(new Error("This build needs cross-origin isolation headers that this host does not send."));
+				return;
+			}
+
+			engine.startGame({ onProgress: onProgress }).then(() => {
+				bar.classList.remove("indet");
+				bar.style.width = "100%";
+				setStatus("STARTING…");
+				clearInterval(tipTimer);
+				loader.classList.add("hidden");
+				setTimeout(() => loader.remove(), 800);
+			}).catch(fail);
+		})();
+	</script>
+</body>
+</html>

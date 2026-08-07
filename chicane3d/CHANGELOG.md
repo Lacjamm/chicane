@@ -1,6 +1,12 @@
 # CHANGELOG — Chicane: Full Throttle 3D
 
 ## v9.12 (this build)
+**Branded loading screen for the web version:** the browser build now
+boots into a Chicane-styled loader — neon title, live download bar with
+MB and % readout, a shimmer state while the engine compiles, rotating
+gameplay tips, and clear error messages if WebGL is unavailable. Fades
+out the moment the engine starts.
+
 **SPACE to jump, tap again for a double jump.** Grounded tap launches
 the car; a second tap mid-air gives a stronger second kick with a
 nose-up flourish. Handbrake (and drifting) moved from SPACE to CTRL —
