@@ -151,7 +151,10 @@ const MODEL_SKINS := {
 # The game must boot and stay fully playable without any model packs.
 static func skin_ok(sid: String) -> bool:
 	if not MODEL_SKINS.has(sid): return false
-	return FileAccess.file_exists(str(MODEL_SKINS[sid].path))
+	# exported builds remap imported files, so raw FileAccess reports them
+	# missing — ResourceLoader sees the imported scene (web/desktop exports)
+	var p := str(MODEL_SKINS[sid].path)
+	return FileAccess.file_exists(p) or ResourceLoader.exists(p)
 
 # v4 — Velocity County barn-find sites (open-world derelicts you restore)
 const BARN_SITES := [

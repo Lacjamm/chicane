@@ -306,6 +306,13 @@ export templates once (Godot → Editor → Manage Export Templates) and then
 *Project → Export* produces distributable builds into `../dist/`, or from a
 terminal: `godot --headless --path chicane3d --export-release Windows`.
 
+**Play in the browser:** every push to `main` auto-builds the Web (HTML5)
+export and deploys it to GitHub Pages via
+`.github/workflows/deploy-web.yml` (models regenerated from the CC0 kit,
+validation suite as a deploy gate, then export + publish). The site lives
+at `https://<owner>.github.io/<repo>/`. The web build uses the GL
+Compatibility renderer and needs no special headers (threads disabled).
+
 ## Credits & license notes
 
 - Car models: ["Car Kit" by Kenney](https://kenney.nl/assets/car-kit) —

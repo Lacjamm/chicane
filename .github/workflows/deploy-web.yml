@@ -1,0 +1,79 @@
+# Builds the Godot Web (HTML5) export and deploys it to GitHub Pages.
+# Runs on every push to main (and manually via workflow_dispatch).
+#
+# One-time repo setup if the deploy step complains: Settings -> Pages ->
+# Source: "GitHub Actions". The site lands at:
+#   https://<owner>.github.io/<repo>/
+name: Deploy Web build to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+env:
+  # match the engine the project is developed and tested on
+  GODOT_VERSION: 4.7.1
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Godot ${{ env.GODOT_VERSION }} + web export templates
+        run: |
+          BASE="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -fsSL -o godot.zip "$BASE/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          unzip -q godot.zip
+          sudo mv "Godot_v${GODOT_VERSION}-stable_linux.x86_64" /usr/local/bin/godot
+          godot --version
+          curl -fsSL -o templates.tpz "$BASE/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          mkdir -p "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable"
+          unzip -q templates.tpz -d /tmp/templates
+          mv /tmp/templates/templates/* "$HOME/.local/share/godot/export_templates/${GODOT_VERSION}.stable/"
+
+      - name: Generate car models from the bundled CC0 kit
+        run: godot --headless --path chicane3d --script ../tools/convert_car_models.gd
+
+      - name: Import assets
+        run: godot --headless --path chicane3d --import
+
+      - name: Run validation suite (deploy gate)
+        run: godot --headless --path chicane3d scenes/tests/TestAll.tscn
+
+      - name: Export Web build
+        run: |
+          mkdir -p dist/chicane-web
+          godot --headless --path chicane3d --export-release Web
+          ls -lah dist/chicane-web
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/chicane-web
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Configure Pages
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
