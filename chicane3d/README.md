@@ -67,8 +67,16 @@ If the window opens black or crashes on an older PC: in Godot go to
   crumpling when you hit it. Damage changes how your car drives.
 - **Weapons** — pick any 3 of 10 (missiles, machine guns, blade wings,
   chainsaw, wrecking ball, bombs, flamethrower, freeze ray, EMP, shockwave),
-  all unlimited ammo. Destroyed cars respawn after 10 seconds. Hit **Q**
+  all unlimited ammo. Destroyed cars respawn after a few seconds. Hit **Q**
   in a race for your live inventory.
+- **Destructible buildings** — glass towers, concrete blocks, fuel tanks
+  and neon signs line every road, each with its own explosion: shatter,
+  rubble + dust, chain-reaction fireballs, spark showers. +100 bounty each.
+- **Health & respawning** — a real HEALTH bar; hit zero and it's "RIP!",
+  a respawn countdown, and you're back in a pristine car mid-race.
+- **Three levels of play** — EASY / NORMAL / HARD chosen at first launch
+  (switchable any time): scales AI, police, damage, weapon cooldowns,
+  respawn timers, health regen and payouts.
 - **Warp speed, god mode & radar** — [Z] triple-speed burst; Settings
   toggles for invincibility and a rotating proximity radar.
 - **Every car free to drive** — the garage unlocks any non-secret car
@@ -271,14 +279,25 @@ and frame cost. See CHANGELOG.md and KNOWN_ISSUES.md.
   bodywork reads distinct); regenerate with `tools/convert_car_models.gd`.
   Wheels on every bundled skin split onto the physics hubs and spin/steer.
 - **Pick-3 weapon loadout** with unlimited ammo (10 weapons), a live [Q]
-  inventory overlay, and a 10-second respawn for everything you destroy.
+  inventory overlay, and difficulty-scaled respawns for everything you
+  destroy.
+- **Destructible roadside buildings** (v9.8) — four types, four deaths:
+  shattering glass, crumbling concrete with physical rubble, fuel tanks
+  that chain-detonate into real weapon blasts, sparking neon signs.
+- **HEALTH bar + RIP respawn** (v9.7) — zero health means a slow-mo
+  "RIP!", a countdown, and a rebuilt car back on the road; races are no
+  longer lost to a wreck.
+- **Three levels of play** (v9.9) — EASY — Cruise / NORMAL — Redline /
+  HARD — Apex, chosen at first launch; one tuning table in `d.gd` drives
+  AI skill, damage, cooldowns, respawn timers, regen and payouts.
 - **Warp speed** ([Z], 3× for 10 s), **god mode** and a rotating
   **proximity radar** (both in Settings → Gameplay).
-- **Lighting overhaul** + Brightness slider; glossy clearcoat paint on all
-  cars, imported and procedural.
+- **Lighting overhauls** ×2 + Brightness slider; glossy clearcoat paint on
+  all cars, imported and procedural.
 - **Every non-secret car free to drive** from the garage.
-- Validation suite: **274 checks**, plus scripted bot races that fire the
-  full loadout and verify blow-ups, respawns and warp end-to-end.
+- Validation suite: **294 checks**, plus scripted bot races that fire the
+  full loadout and verify blow-ups, respawns, warp and building
+  demolition end-to-end.
 
 ## Shipping builds
 
