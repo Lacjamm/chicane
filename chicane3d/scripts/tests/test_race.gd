@@ -8,6 +8,8 @@ var log_t := 0.0
 var results: Array = []
 var _warped := false
 var _demolished := false
+var _impounded := false
+var _nuked_cops := false
 
 func _ready() -> void:
 	print("TEST: boot ok — profile cash=", P.data.cash, " diff=", P.data.diff)
@@ -90,6 +92,21 @@ func _bot(_delta: float) -> void:
 		race.cd_warp = 25.0
 		p.start_warp(10.0)
 		print("TEST warp engaged at kmh=", int(p.kmh()))
+	# impound warning: trigger it, then clear it with the easy-mode nuke
+	if phase == 0 and not _impounded and timer > 24.0 and race.wanted:
+		_impounded = true
+		race._trigger_impound_warning()
+		print("TEST impound warning started: %ds on the clock" % int(race.impound_t))
+	if phase == 0 and _impounded and not _nuked_cops and timer > 28.0:
+		_nuked_cops = true
+		var was: String = P.data.diff
+		P.data.diff = "easy"
+		race._fire_nuke()
+		P.data.diff = was
+		var alive: int = race.cops.filter(func(c): return is_instance_valid(c) and not c.wrecked and not c.dead).size()
+		print("TEST nuke: fired=", race.nukes_fired, " cops_alive_after=", alive,
+			" impound_cleared=", race.impound_t == 0.0)
+		results.append("nuke_ok" if race.nukes_fired > 0 and race.impound_t == 0.0 else "nuke_fail")
 	# destructibles: level one building of each reachable type deterministically
 	if phase == 0 and not _demolished and timer > 20.0 and race.destructibles \
 			and race.destructibles.buildings.size() > 1:
@@ -217,6 +234,6 @@ func _wrap_up() -> void:
 	print("TEST SUMMARY: ", results)
 	var pass_ok: bool = results.size() >= 5 and not results.has("timeout_harness") \
 		and not results.has("roam_fail") and not results.has("missile_none") \
-		and not results.has("buildings_none")
+		and not results.has("buildings_none") and not results.has("nuke_fail")
 	print("TEST ", "PASS" if pass_ok else "PARTIAL")
 	get_tree().quit(0 if pass_ok else 1)

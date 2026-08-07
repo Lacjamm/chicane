@@ -1,6 +1,21 @@
 # CHANGELOG — Chicane: Full Throttle 3D
 
-## v9.9 (this build)
+## v9.10 (this build)
+**Impound warning (3 minutes):** the first time the VCPD pins you down,
+you are no longer busted on the spot. Instead: "IMPOUND WARNING!", a
+flashing 3:00 countdown on the HUD, and one chance — lose the police
+before it expires. Get caught again (or run out the clock while still
+wanted) and the car is impounded for real. Shaking the heat clears the
+warning.
+
+**[Y] NUKE THE POLICE (EASY level only):** a panic button for Cruise
+drivers. One press: screen flash, every police unit on the road goes up
+in a blast, the busted meter and any impound warning are wiped, and your
+car is set back in the middle of the road. 45s recharge; the HUD shows
+"[Y] NUKE POLICE RDY" whenever you're on EASY. On other levels it just
+tells you no.
+
+## v9.9
 **Three levels of play — EASY / NORMAL / HARD:**
 - First launch now asks you to choose a level; switch any time from the
   main menu (LEVEL button) or Settings.

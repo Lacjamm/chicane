@@ -763,7 +763,7 @@ func show_settings() -> void:
 			show_settings(), P.data.station == r.id))
 	v.add_child(rrow)
 	v.add_child(HSeparator.new())
-	v.add_child(_lbl("Keyboard: WASD/arrows · SPACE handbrake · SHIFT nitrous · F/G/H weapon slots · Q inventory · Z warp · E EMP · K spikes · R roadblock · T turbo · C camera · X reset · M radio · ESC pause", 12, GREY))
+	v.add_child(_lbl("Keyboard: WASD/arrows · SPACE handbrake · SHIFT nitrous · F/G/H weapon slots · Q inventory · Z warp · Y nuke police (EASY) · E EMP · K spikes · R roadblock · T turbo · C camera · X reset · M radio · ESC pause", 12, GREY))
 	v.add_child(_lbl("Controller: RT throttle · LT brake · Left stick steer · X handbrake · A nitrous · LS-click/Y/RB weapon slots · D-pad left warp · B turbo · LB spikes · Back camera · D-pad up reset · Start pause", 12, GREY))
 	v.add_child(_btn("RESET ALL PROGRESS", _confirm_reset.bind()))
 	_focus_first()

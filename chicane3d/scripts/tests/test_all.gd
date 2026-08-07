@@ -242,6 +242,13 @@ func _check_missiles() -> void:
 	for bt in ["tower", "block", "tank", "sign"]:
 		ok(Destructibles.TYPES.has(bt) and Destructibles.TYPES[bt].has("hp")
 			and Destructibles.TYPES[bt].has("label"), "building type complete: %s" % bt)
+	# v9.10 — impound warning + easy-mode nuke
+	ok(InputMap.has_action("nuke"), "nuke input registered ([Y], easy only)")
+	var rn := RaceManager.new()
+	ok(rn.IMPOUND_WARNING == 180.0, "impound warning lasts 3 minutes")
+	ok(rn.has_method("_fire_nuke") and rn.has_method("_trigger_impound_warning"),
+		"impound warning + police nuke implemented")
+	rn.free()
 	# v9.7 — health bar + RIP respawn
 	var rr := RaceManager.new()
 	ok(rr.RIP_RESPAWN == 5.0, "RIP respawn countdown is 5s")

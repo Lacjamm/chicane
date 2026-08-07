@@ -332,6 +332,8 @@ func _process(_delta: float) -> void:
 	w.append("[%s] WARP %s" % [k_warp, warp_status])
 	w.append("[%s] EMP %s" % [k_emp, str(race.w_emp) if race.w_emp < 99 else ("RDY" if race.cd_emp <= 0 else "…")])
 	w.append("[%s] TURBO %s" % [k_turbo, str(race.w_turbo) if race.w_turbo < 99 else ("RDY" if race.cd_turbo <= 0 else "…")])
+	if _difficulty() == "easy" and race.career != "cop":
+		w.append("[Y] NUKE POLICE %s" % ("RDY" if race.cd_nuke <= 0.0 else "…"))
 	if bool(S.g("god_mode")):
 		w.append("⚡GOD MODE")
 	if race.career == "cop":
@@ -342,6 +344,10 @@ func _process(_delta: float) -> void:
 	wrong_lbl.visible = race.wrong_way and int(race.t * 4.0) % 2 == 0
 	# status stack
 	for c in status_box.get_children(): c.queue_free()
+	if race.impound_t > 0.0:
+		var im := int(ceil(race.impound_t))
+		_status_line("IMPOUND IN %d:%02d — LOSE THE COPS!" % [im / 60, im % 60],
+			BAD if int(race.t * 2.0) % 2 == 0 else WARN)
 	if race.slip_active: _status_line("SLIPSTREAMING %.2fs" % race.slip_t, Color(0.5, 0.85, 1.0))
 	if race.oncoming_active: _status_line("ONCOMING %dm" % int(race.oncoming_m), WARN)
 	if P.drifting: _status_line("DRIFTING %dm" % int(race.drift_m), PINK)
@@ -371,6 +377,11 @@ func _status_line(txt: String, col: Color) -> void:
 	l.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	status_box.add_child(l)
+
+# _process shadows the P autoload with the player car — resolve the
+# profile difficulty here, outside that scope
+func _difficulty() -> String:
+	return str(P.data.diff)
 
 # ---------- custom draws ----------
 func _draw_dial() -> void:

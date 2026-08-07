@@ -39,6 +39,13 @@ var bounty := 0.0
 var risk := 0.0
 var escape := 0.0
 var busted := 0.0
+# v9.10 — first time the cops pin you, you get a warning instead of an
+# instant impound; escape before it expires or get caught again and lose.
+const IMPOUND_WARNING := 180.0
+var impound_t := 0.0
+# easy-mode panic button: [Y] nukes every police unit
+var cd_nuke := 0.0
+var nukes_fired := 0
 var drift_score := 0
 var drift_combo := 1.0
 var best_speed := 0.0
@@ -419,6 +426,7 @@ func _physics_process(delta: float) -> void:
 	_weapons_input(delta)
 	_respawns(delta)
 	_police(delta)
+	_impound(delta)
 	_near_miss_check()
 	_skills(delta)
 	_mode_logic(delta)
@@ -531,9 +539,11 @@ func _weapons_input(delta: float) -> void:
 	cd_block = maxf(cd_block - delta, 0.0)
 	cd_missile = maxf(cd_missile - delta, 0.0)
 	cd_warp = maxf(cd_warp - delta, 0.0)
+	cd_nuke = maxf(cd_nuke - delta, 0.0)
 	# [Q] weapon inventory — available even while stunned/spun out
 	if Input.is_action_just_pressed("inv") and hud:
 		hud.toggle_inventory()
+	if Input.is_action_just_pressed("nuke"): _fire_nuke()
 	if not player.controls_enabled: return
 	if Input.is_action_just_pressed("warp") and cd_warp <= 0.0:
 		cd_warp = 25.0 * float(P.diff().get("wpncd", 1.0))
@@ -585,6 +595,48 @@ func _fire_emp() -> void:
 			toast("EMP HIT!", "good")
 	else:
 		toast("EMP missed — no target in range", "warn")
+
+# ============ IMPOUND WARNING ============
+func _trigger_impound_warning() -> void:
+	busted = 0.0
+	impound_t = IMPOUND_WARNING
+	player.stun(1.2)                      # they slap a boot warning on you
+	hud.big_message("IMPOUND WARNING!")
+	toast("3 MINUTES to lose the VCPD or your car is impounded!", "bad")
+	SFX.play("siren_loop", -6.0)
+
+func _impound(delta: float) -> void:
+	if impound_t <= 0.0: return
+	impound_t -= delta
+	if not wanted or heat <= 0:
+		impound_t = 0.0
+		toast("Impound warning cleared — they lost the paperwork", "good")
+		return
+	if impound_t <= 0.0:
+		_end("busted")
+
+# ============ NUKE THE POLICE (easy mode only) ============
+func _fire_nuke() -> void:
+	if career == "cop": return
+	if P.data.diff != "easy":
+		toast("NUKE is EASY-level equipment only", "warn")
+		return
+	if cd_nuke > 0.0: return
+	cd_nuke = 45.0
+	nukes_fired += 1
+	hud.flash(true)
+	SFX.crash(true)
+	var n := 0
+	for c in cops.duplicate():
+		if is_instance_valid(c) and not c.wrecked and not c.dead:
+			missile_blast(c.global_position)
+			n += 1
+	busted = 0.0
+	impound_t = 0.0
+	player.reset_to_track()               # back to the middle of the road
+	hud.big_message("NUKED THE POLICE!")
+	toast("POLICE NUKED — %d unit%s vaporised!" % [n, "" if n == 1 else "s"], "good")
+	if player.chase: player.chase.shake(12.0)
 
 # ============ MISSILES (unlimited) ============
 func _fire_missile() -> void:
@@ -865,7 +917,11 @@ func _police(delta: float) -> void:
 	# busted / escape
 	if nearest < 22.0 and player.kmh() < 15.0:
 		busted += delta / 2.4
-		if busted >= 1.0: _end("busted")
+		if busted >= 1.0:
+			if impound_t > 0.0:
+				_end("busted")            # caught again during the warning
+			else:
+				_trigger_impound_warning()
 	else:
 		busted = maxf(busted - delta * 0.8, 0.0)
 	if mode in ["escape", "free", "roam"]:

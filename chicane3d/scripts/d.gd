@@ -4,7 +4,7 @@
 # ============================================================
 extends Node
 
-const VERSION := "v9.9"
+const VERSION := "v9.10"
 
 # v9.9 — three levels of play. Beyond AI skill/payouts, difficulty now
 # shapes the arcade systems: weapon cooldowns (wpncd), your death
@@ -13,7 +13,7 @@ const VERSION := "v9.9"
 const DIFFICULTY := {
 	"easy":   {"label":"EASY — Cruise",    "ai":0.86, "cop":0.90, "aggro":0.7, "cash":1.25, "dmg":0.55,
 		"wpncd":0.7,  "rip":3.0, "enemy_respawn":14.0, "regen":1.2,
-		"desc":"Forgiving racing, big rewards, health regen, fast weapons. Great for younger drivers."},
+		"desc":"Forgiving racing, big rewards, health regen, fast weapons — and [Y] nukes the police."},
 	"normal": {"label":"NORMAL — Redline", "ai":1.00, "cop":1.00, "aggro":1.0, "cash":1.0,  "dmg":1.0,
 		"wpncd":1.0,  "rip":5.0, "enemy_respawn":10.0, "regen":0.0,
 		"desc":"The intended Full Throttle experience."},
@@ -272,6 +272,7 @@ func _setup_input() -> void:
 		"wpn1":[KEY_F], "wpn2":[KEY_G], "wpn3":[KEY_H],
 		"warp":[KEY_Z],
 		"inv":[KEY_Q],   # weapon inventory overlay
+		"nuke":[KEY_Y],  # easy mode: nuke the police
 		"camera":[KEY_C], "reset":[KEY_X], "radio":[KEY_M], "pause":[KEY_ESCAPE, KEY_P],
 		"gear_up":[KEY_B], "gear_down":[KEY_V],
 		"lookback":[KEY_TAB],
