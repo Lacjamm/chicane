@@ -50,9 +50,10 @@ var result := ""
 var summary := {}
 var slowmo_t := 0.0
 var slowmo_cd := 0.0
-# player death: RIP message + respawn countdown (seconds)
+# player death: RIP message + respawn countdown (seconds, Normal difficulty)
 const RIP_RESPAWN := 5.0
 var rip_t := 0.0
+var rip_total := RIP_RESPAWN
 var rips := 0
 var cop_spawn_t := 6.0
 var spike_trap_t := 9.0
@@ -161,6 +162,8 @@ var respawn_queue: Array = []
 
 var hud: Node = null
 var weapons: Node = null
+var destructibles: Node = null
+var buildings_destroyed := 0
 
 func start(event: Dictionary, in_career: String) -> void:
 	ev = event
@@ -218,6 +221,10 @@ func start(event: Dictionary, in_career: String) -> void:
 	director = PoliceDirector.new()
 	director.setup(self)
 	add_child(director)
+	# v9.8 — shootable roadside buildings
+	destructibles = load("res://scripts/destructibles.gd").new()
+	add_child(destructibles)
+	destructibles.setup(self)
 	if is_loop:
 		_cp_flags = [false, false, false]
 		lap_start_t = 0.0
@@ -261,13 +268,13 @@ func _environment() -> void:
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	# v9.4: global brightness lift — the zones read too dark, especially at
-	# night. Ambient gets a multiplier + floor, exposure comes up a touch,
-	# and the player can tune it further in Settings.
+	# v9.8: second global brightness lift (v9.4's wasn't enough) — much
+	# higher ambient floor so night zones stay readable, hotter exposure.
+	# The Settings → Video Brightness slider stacks on top.
 	var bright: float = clampf(float(S.g("brightness")), 0.6, 1.6)
-	env.ambient_light_energy = clampf(zone.ambient * 1.7 + 0.14, 0.35, 2.2) * bright
+	env.ambient_light_energy = clampf(zone.ambient * 2.3 + 0.42, 0.7, 2.6) * bright
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
-	env.tonemap_exposure = 1.18 * bright
+	env.tonemap_exposure = 1.38 * bright
 	env.glow_enabled = S.glow_enabled()
 	env.glow_intensity = 0.3
 	env.glow_bloom = 0.03
@@ -281,7 +288,7 @@ func _environment() -> void:
 	add_child(world_env)
 	sun = DirectionalLight3D.new()
 	sun.light_color = zone.sun
-	sun.light_energy = zone.sun_energy * 1.35 + 0.15
+	sun.light_energy = zone.sun_energy * 1.7 + 0.3
 	sun.shadow_enabled = S.shadows_enabled()
 	sun.rotation_degrees = Vector3(-18.0 if zone.night else -38.0, 40, 0)
 	add_child(sun)
@@ -397,7 +404,7 @@ func _physics_process(delta: float) -> void:
 		return
 	if rip_t > 0.0:
 		rip_t -= delta / maxf(Engine.time_scale, 0.05)
-		if rip_t <= RIP_RESPAWN - 1.6 and Engine.time_scale < 1.0:
+		if rip_t <= rip_total - 1.6 and Engine.time_scale < 1.0:
 			Engine.time_scale = 1.0     # slow-mo only for the death beat
 			hud.letterbox(false)
 		hud.respawn_count(rip_t)
@@ -486,12 +493,14 @@ func _slowmo(dur: float) -> void:
 	slowmo_cd = 9.0
 	hud.letterbox(true)
 
-# v9.7 — death is a setback, not a race-ender: RIP + 5s respawn countdown
+# v9.7 — death is a setback, not a race-ender: RIP + respawn countdown
+# (5s on Normal; difficulty shortens or stretches it)
 func _start_wreck() -> void:
 	player.wreck()
 	player.controls_enabled = false
 	Engine.time_scale = 0.35
-	rip_t = RIP_RESPAWN
+	rip_total = float(P.diff().get("rip", RIP_RESPAWN))
+	rip_t = rip_total
 	rips += 1
 	hud.letterbox(true)
 	hud.big_message("RIP!")
@@ -527,7 +536,7 @@ func _weapons_input(delta: float) -> void:
 		hud.toggle_inventory()
 	if not player.controls_enabled: return
 	if Input.is_action_just_pressed("warp") and cd_warp <= 0.0:
-		cd_warp = 25.0
+		cd_warp = 25.0 * float(P.diff().get("wpncd", 1.0))
 		player.start_warp(10.0)
 		toast("WARP SPEED — 3× VELOCITY!", "good")
 		SFX.play("turbo_loop", -6.0)
@@ -611,6 +620,9 @@ func missile_blast(pos: Vector3) -> void:
 		if not is_instance_valid(v) or v == player: continue
 		if v.global_position.distance_to(pos) < 8.0:
 			destroy_vehicle(v, pos)
+	if destructibles:
+		for b in destructibles.query_radius(pos, 9.0):
+			destructibles.destroy(b, pos)
 	_blast_visual(pos)
 
 # One-shot destruction used by every weapon — routes through the wreck +
@@ -618,11 +630,12 @@ func missile_blast(pos: Vector3) -> void:
 func destroy_vehicle(v: Node3D, pos: Vector3) -> void:
 	var dir: Vector3 = v.global_position - pos + Vector3.UP * 1.5
 	dir = dir.normalized() if dir.length() > 0.1 else Vector3.UP
+	var respawn_t := float(P.diff().get("enemy_respawn", RESPAWN_DELAY))
 	if v is TrafficCar:
 		if v.hit_free: return
 		v.blow_up(pos)
 		bounty += 60.0
-		respawn_queue.append({"kind": "traffic", "t": RESPAWN_DELAY})
+		respawn_queue.append({"kind": "traffic", "t": respawn_t})
 	elif v is AICar and not v.wrecked:
 		v.take_impact(pos, dir, 40.0, 2.0)      # crumple, shed panels, kill lights
 		v.hp = 0.0
@@ -637,7 +650,7 @@ func destroy_vehicle(v: Node3D, pos: Vector3) -> void:
 			respawn_queue.append({"kind": "ai", "node": v, "id": v.car_id, "role": v.role,
 				"skill": v.skill, "paint": v.paint_col, "police": v.is_police,
 				"cop_role": v.cop_role, "lane": v.lane, "d": v.progress,
-				"boss": v.has_meta("boss"), "t": RESPAWN_DELAY})
+				"boss": v.has_meta("boss"), "t": respawn_t})
 
 func _respawns(delta: float) -> void:
 	for i in range(respawn_queue.size() - 1, -1, -1):

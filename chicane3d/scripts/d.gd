@@ -4,12 +4,22 @@
 # ============================================================
 extends Node
 
-const VERSION := "v9.7"
+const VERSION := "v9.9"
 
+# v9.9 — three levels of play. Beyond AI skill/payouts, difficulty now
+# shapes the arcade systems: weapon cooldowns (wpncd), your death
+# countdown (rip), how fast destroyed enemies return (enemy_respawn)
+# and passive health regen per second (regen).
 const DIFFICULTY := {
-	"easy":   {"label":"Cruise",  "ai":0.86, "cop":0.90, "aggro":0.7, "cash":1.25, "dmg":0.55, "desc":"Forgiving racing, big rewards. Great for younger drivers."},
-	"normal": {"label":"Redline", "ai":1.00, "cop":1.00, "aggro":1.0, "cash":1.0,  "dmg":1.0,  "desc":"The intended Full Throttle experience."},
-	"hard":   {"label":"Apex",    "ai":1.07, "cop":1.08, "aggro":1.4, "cash":1.15, "dmg":1.4,  "desc":"Ruthless rivals. Relentless police."},
+	"easy":   {"label":"EASY — Cruise",    "ai":0.86, "cop":0.90, "aggro":0.7, "cash":1.25, "dmg":0.55,
+		"wpncd":0.7,  "rip":3.0, "enemy_respawn":14.0, "regen":1.2,
+		"desc":"Forgiving racing, big rewards, health regen, fast weapons. Great for younger drivers."},
+	"normal": {"label":"NORMAL — Redline", "ai":1.00, "cop":1.00, "aggro":1.0, "cash":1.0,  "dmg":1.0,
+		"wpncd":1.0,  "rip":5.0, "enemy_respawn":10.0, "regen":0.0,
+		"desc":"The intended Full Throttle experience."},
+	"hard":   {"label":"HARD — Apex",      "ai":1.07, "cop":1.08, "aggro":1.4, "cash":1.15, "dmg":1.4,
+		"wpncd":1.35, "rip":8.0, "enemy_respawn":7.0,  "regen":0.0,
+		"desc":"Ruthless rivals, relentless police, slow weapons, and the dead come back angry."},
 }
 
 # stats 1..10: top, acc, hand, drift, str, nitro   | shape: silhouette params for CarFactory

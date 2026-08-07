@@ -26,6 +26,7 @@ func _ready() -> void:
 	_check_world()
 	_check_skins()
 	_check_missiles()
+	_check_difficulty()
 	_check_save()
 	print("== %d checks, %d failures ==" % [checks, fails])
 	print("SUITE ", "PASS" if fails == 0 else "FAIL")
@@ -231,6 +232,16 @@ func _check_missiles() -> void:
 	ok(pc.has_method("start_warp"), "player supports warp speed")
 	pc.start_warp(10.0)
 	ok(pc.warp_t == 10.0, "warp lasts 10 seconds")
+	# v9.8 — destructible roadside buildings
+	var ds = load("res://scripts/destructibles.gd")
+	ok(ds != null and ds.can_instantiate(), "destructibles script loads")
+	var dn: Node = ds.new()
+	ok(dn.has_method("destroy") and dn.has_method("damage") and dn.has_method("query_radius"),
+		"destructibles expose damage/destroy/query")
+	dn.free()
+	for bt in ["tower", "block", "tank", "sign"]:
+		ok(Destructibles.TYPES.has(bt) and Destructibles.TYPES[bt].has("hp")
+			and Destructibles.TYPES[bt].has("label"), "building type complete: %s" % bt)
 	# v9.7 — health bar + RIP respawn
 	var rr := RaceManager.new()
 	ok(rr.RIP_RESPAWN == 5.0, "RIP respawn countdown is 5s")
@@ -254,6 +265,25 @@ func _check_missiles() -> void:
 	ok(pc.hp == 100.0 and pc.stun_t == 0.0 and pc.spike_t == 0.0, "god mode blocks damage/stun/spikes")
 	P.data.settings.god_mode = god_was
 	pc.free()
+
+# v9.9 — three levels of play shape all the arcade systems
+func _check_difficulty() -> void:
+	print("- difficulty (3 levels) -")
+	ok(D.DIFFICULTY.keys() == ["easy", "normal", "hard"], "exactly easy / normal / hard")
+	for k in D.DIFFICULTY:
+		var d: Dictionary = D.DIFFICULTY[k]
+		var complete := true
+		for f in ["label", "ai", "cop", "aggro", "cash", "dmg", "wpncd", "rip", "enemy_respawn", "regen", "desc"]:
+			if not d.has(f): complete = false
+		ok(complete, "difficulty def complete: %s" % k)
+	var e: Dictionary = D.DIFFICULTY.easy
+	var n: Dictionary = D.DIFFICULTY.normal
+	var h: Dictionary = D.DIFFICULTY.hard
+	ok(e.rip < n.rip and n.rip < h.rip, "death countdown scales: easy %ss < normal %ss < hard %ss" % [e.rip, n.rip, h.rip])
+	ok(e.wpncd < n.wpncd and n.wpncd < h.wpncd, "weapon cooldowns scale with difficulty")
+	ok(e.enemy_respawn > h.enemy_respawn, "enemies return faster on hard")
+	ok(e.regen > 0.0 and n.regen == 0.0, "health regen is easy-only")
+	ok(n.rip == 5.0, "normal keeps the 5s respawn countdown")
 
 func _check_save() -> void:
 	print("- save / migration -")

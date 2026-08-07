@@ -7,6 +7,7 @@ var timer := 0.0
 var log_t := 0.0
 var results: Array = []
 var _warped := false
+var _demolished := false
 
 func _ready() -> void:
 	print("TEST: boot ok — profile cash=", P.data.cash, " diff=", P.data.diff)
@@ -36,7 +37,9 @@ func _on_finished(summary: Dictionary) -> void:
 		" | top=", int(race.best_speed), "km/h | dmg=", int(100.0 - race.player.hp), "%")
 	if phase == 0:
 		print("TEST missiles: fired=", race.missiles_fired, " respawns=", race.respawns_done,
-			" queue=", race.respawn_queue.size(), " player_rips=", race.rips)
+			" queue=", race.respawn_queue.size(), " player_rips=", race.rips,
+			" buildings_destroyed=", race.buildings_destroyed)
+		results.append("buildings_ok" if race.buildings_destroyed >= 2 else "buildings_none")
 		results.append("missile_ok" if race.missiles_fired > 0 and race.respawns_done > 0 else "missile_none")
 	results.append(race.result)
 	race.cleanup()
@@ -87,6 +90,15 @@ func _bot(_delta: float) -> void:
 		race.cd_warp = 25.0
 		p.start_warp(10.0)
 		print("TEST warp engaged at kmh=", int(p.kmh()))
+	# destructibles: level one building of each reachable type deterministically
+	if phase == 0 and not _demolished and timer > 20.0 and race.destructibles \
+			and race.destructibles.buildings.size() > 1:
+		_demolished = true
+		var before: int = race.destructibles.buildings.size()
+		race.destructibles.destroy(race.destructibles.buildings[0], p.global_position)
+		race.destructibles.damage(race.destructibles.buildings[0], 99, p.global_position)
+		print("TEST buildings: %d spawned, destroyed 2 -> %d left, counter=%d" %
+			[before, race.destructibles.buildings.size(), race.buildings_destroyed])
 	# steer toward a sensible lane / the target
 	var want_lat := 2.0
 	if race.mode == "intercept" and race.target and is_instance_valid(race.target):
@@ -204,6 +216,7 @@ func _wrap_up() -> void:
 	print("TEST: secrets after all-drift wins → ", P.data.secrets.keys())
 	print("TEST SUMMARY: ", results)
 	var pass_ok: bool = results.size() >= 5 and not results.has("timeout_harness") \
-		and not results.has("roam_fail") and not results.has("missile_none")
+		and not results.has("roam_fail") and not results.has("missile_none") \
+		and not results.has("buildings_none")
 	print("TEST ", "PASS" if pass_ok else "PARTIAL")
 	get_tree().quit(0 if pass_ok else 1)

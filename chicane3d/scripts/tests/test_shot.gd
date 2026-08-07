@@ -17,6 +17,9 @@ func _run() -> void:
 	menus.show_settings()
 	await _wait(1.0)
 	await _snap("settings")
+	menus.show_difficulty()
+	await _wait(0.8)
+	await _snap("difficulty")
 	menus.queue_free()
 	await _wait(0.3)
 	# neon race
@@ -35,6 +38,21 @@ func _run() -> void:
 	race.hud.flash(true)
 	await _wait(0.4)
 	await _snap("crash_deform")
+	# blow up the nearest building ahead for the camera
+	if race.destructibles:
+		var inv: Transform3D = race.player.global_transform.affine_inverse()
+		var best: Node3D = null
+		var best_d := 1e9
+		for b in race.destructibles.buildings:
+			if not is_instance_valid(b): continue
+			var l: Vector3 = inv * b.global_position
+			if l.z < -10.0 and -l.z < best_d:
+				best_d = -l.z
+				best = b
+		if best:
+			race.destructibles.destroy(best, race.player.global_position)
+			await _wait(0.3)
+			await _snap("building_boom")
 	# force a death to capture the RIP! + respawn countdown
 	race.player.hp = 0.0
 	await _wait(1.6)

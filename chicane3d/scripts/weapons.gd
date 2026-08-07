@@ -48,7 +48,8 @@ func fire_slot(i: int) -> void:
 	if i < 0 or i >= slots.size(): return
 	var wid: String = slots[i]
 	if cds[i] > 0.0: return
-	cds[i] = float(D.WEAPONS[wid].cd)
+	# difficulty scales every weapon cooldown (easy fires faster)
+	cds[i] = float(D.WEAPONS[wid].cd) * float(P.diff().get("wpncd", 1.0))
 	match wid:
 		"missile":  race._fire_missile()
 		"emp":      race._fire_emp()
@@ -98,8 +99,27 @@ func _fire_gun() -> void:
 			target.set_meta("gun_hits", hits)
 			if hits >= 6:
 				race.destroy_vehicle(target, hit_pos)
+	else:
+		# no car in the cone — chew on roadside buildings instead
+		var bld := _building_ahead(140.0)
+		if bld != null:
+			hit_pos = bld.global_position + Vector3.UP * float(bld.get_meta("rad"))
+			race.destructibles.damage(bld, 1, muzzle)
 	_tracer(muzzle, hit_pos)
 	SFX.play("shift", -18.0)
+
+func _building_ahead(max_d: float) -> Node3D:
+	if race.destructibles == null: return null
+	var best: Node3D = null
+	var best_d := 1e9
+	var inv: Transform3D = race.player.global_transform.affine_inverse()
+	for b in race.destructibles.buildings:
+		if not is_instance_valid(b): continue
+		var l: Vector3 = inv * b.global_position
+		if l.z < 0.0 and l.z > -max_d and absf(l.x) < 14.0 and -l.z < best_d:
+			best_d = -l.z
+			best = b
+	return best
 
 func _tracer(from: Vector3, to: Vector3) -> void:
 	var seg := MeshInstance3D.new()
@@ -201,6 +221,13 @@ func _fire_flame() -> void:
 				v.set_meta("burn", burn)
 				if burn >= 5:
 					race.destroy_vehicle(v, v.global_position)
+	# torch buildings in the cone too
+	if race.destructibles:
+		var inv: Transform3D = p.global_transform.affine_inverse()
+		for b in race.destructibles.query_radius(p.global_position, 20.0):
+			var bl: Vector3 = inv * b.global_position
+			if bl.z < 0.0 and bl.z > -19.0 and absf(bl.x) < -bl.z * 0.6 + 3.0:
+				race.destructibles.damage(b, 1, p.global_position)
 
 # ---------- freeze ray ----------
 func _fire_freeze() -> void:
@@ -252,6 +279,9 @@ func _fire_shock() -> void:
 			v.freeze = false
 			v.linear_velocity = dir * 14.0
 			v.angular_velocity = Vector3(randf_range(-3, 3), randf_range(-5, 5), randf_range(-3, 3))
+	if race.destructibles:
+		for b in race.destructibles.query_radius(pos, 14.0):
+			race.destructibles.destroy(b, pos)
 	if p.chase: p.chase.shake(6.0)
 	race._blast_visual(pos + Vector3.UP * 0.5)
 	SFX.play("emp", -4.0)
@@ -320,6 +350,9 @@ func _tick_active(delta: float) -> void:
 						if is_instance_valid(v) and v != race.player \
 								and v.global_position.distance_to(_ball.global_position) < 2.6:
 							race.destroy_vehicle(v, _ball.global_position)
+					if race.destructibles:
+						for b in race.destructibles.query_radius(_ball.global_position, 2.0):
+							race.destructibles.destroy(b, _ball.global_position)
 
 func _melee_kill(zone_check: Callable) -> void:
 	for v in race.all_vehicles():
@@ -329,6 +362,10 @@ func _melee_kill(zone_check: Callable) -> void:
 		if v.global_position.distance_to(race.player.global_position) > 7.0: continue
 		if zone_check.call(_local_to_player(v)):
 			race.destroy_vehicle(v, v.global_position)
+	# blades and saws carve straight through buildings you sideswipe
+	if race.destructibles:
+		for b in race.destructibles.query_radius(race.player.global_position, 4.0):
+			race.destructibles.destroy(b, race.player.global_position)
 
 func _clear_weapon_fx(wid: String) -> void:
 	match wid:

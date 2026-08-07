@@ -1,6 +1,37 @@
 # CHANGELOG — Chicane: Full Throttle 3D
 
-## v9.7 (this build)
+## v9.9 (this build)
+**Three levels of play — EASY / NORMAL / HARD:**
+- First launch now asks you to choose a level; switch any time from the
+  main menu (LEVEL button) or Settings.
+- Difficulty now shapes every arcade system, not just AI skill:
+  - EASY — Cruise: weaker AI and police, 55% damage taken, health regen,
+    30% faster weapon/warp cooldowns, 3s death countdown, destroyed
+    enemies stay gone 14s, +25% cash.
+  - NORMAL — Redline: the intended experience (5s death countdown,
+    10s enemy respawn).
+  - HARD — Apex: sharper AI, aggressive police, +40% damage taken, 35%
+    slower weapons, 8s death countdown, enemies return in 7s, +15% cash.
+
+## v9.8
+**Brighter, again:** second global lighting lift — much higher ambient
+floor (night zones can no longer go murky), hotter exposure, stronger
+sun. The Settings Brightness slider still stacks on top.
+
+**Destructible roadside buildings:** four types line every track and
+each dies its own way when shot —
+- GLASS TOWERS shatter into a cyan shard burst and collapse
+- CONCRETE BLOCKS crumble: dust cloud + physical rubble chunks
+- FUEL TANKS ignite into a full weapon blast that wrecks nearby cars
+  and chain-detonates neighbouring buildings
+- NEON SIGNS short out in a spark shower and topple over
+Every weapon works on them: blasts (missiles/bombs/tank chains) level
+them outright, machine guns and the flamethrower chew through building
+HP, blades/chainsaw/wrecking-ball demolish on contact, shockwave
+flattens everything in radius. +100 bounty per building. The bot race
+harness now verifies demolition end-to-end.
+
+## v9.7
 **Health bar + RIP respawn:**
 - The bottom-left damage meter is now a proper HEALTH bar: starts full,
   drains as you take hits, and shifts green → amber → red.

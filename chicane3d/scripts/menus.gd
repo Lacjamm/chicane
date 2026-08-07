@@ -130,7 +130,9 @@ func show_title() -> void:
 	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(tag)
 	v.add_child(HSeparator.new())
-	v.add_child(_btn("START ENGINE", show_menu.bind(), true))
+	v.add_child(_btn("START ENGINE", func():
+		if P.data.flags.has("diff_chosen"): show_menu()
+		else: show_difficulty(), true))
 	var hint := _lbl("WASD/arrows drive · SPACE handbrake · SHIFT nitrous · F/G/H weapons · Q inventory · Z warp · E EMP · T turbo\nC camera · X reset car · M radio · ESC pause", 13, GREY)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(hint)
@@ -164,6 +166,7 @@ func show_menu() -> void:
 	grid.add_child(_btn("FREE DRIVE", show_free.bind()))
 	grid.add_child(_btn("GARAGE  (%d cars)" % P.data.cars.size(), show_garage.bind()))
 	grid.add_child(_btn("WEAPONS  (%s)" % " / ".join(P.loadout().map(func(wid): return D.WEAPONS[wid].name)), show_weapons.bind()))
+	grid.add_child(_btn("LEVEL: %s" % D.DIFFICULTY[P.data.diff].label, show_difficulty.bind()))
 	grid.add_child(_btn("SECRET CARS  (%d/%d)" % [P.data.secrets.size(), D.SECRET_CARS.size()], show_secrets.bind()))
 	grid.add_child(_btn("SETTINGS", show_settings.bind()))
 
@@ -336,6 +339,31 @@ func show_free() -> void:
 		v.add_child(_btn("%s  ·  %s" % [z.name, z.tag], func(): launch_race.emit(e, "racer")))
 
 # ================= GARAGE =================
+	_focus_first()
+
+# ================= DIFFICULTY (3 levels of play) =================
+func show_difficulty() -> void:
+	_clear(); _bg()
+	var v := _panel(760)
+	var t := _lbl("CHOOSE YOUR LEVEL", 34, PINK)
+	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	v.add_child(t)
+	v.add_child(_lbl("Changes AI skill, police heat, damage taken, weapon cooldowns,\nrespawn timers and payouts. Switch any time from here or Settings.", 13, GREY))
+	v.add_child(HSeparator.new())
+	for k in D.DIFFICULTY:
+		var d: Dictionary = D.DIFFICULTY[k]
+		var b := _btn("%s%s\n%s" % [d.label, "   ✔ CURRENT" if P.data.diff == k else "", d.desc],
+			func():
+				P.data.diff = k
+				P.data.flags["diff_chosen"] = true
+				P.save_game()
+				SFX.play("ui_click", -6.0)
+				show_menu(), P.data.diff == k)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		if P.data.diff == k: b.modulate = Color(0.75, 1.0, 0.78)
+		v.add_child(b)
+	if P.data.flags.has("diff_chosen"):
+		v.add_child(_btn("< Back", show_menu.bind()))
 	_focus_first()
 
 # ================= WEAPON LOADOUT =================

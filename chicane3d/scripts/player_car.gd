@@ -113,6 +113,10 @@ func _drive(delta: float) -> void:
 	if warp_t > 0.0:
 		warp_t -= delta
 		max_kmh *= 3.0
+	# easy difficulty slowly patches you up while you're alive
+	var regen := float(P.diff().get("regen", 0.0))
+	if regen > 0.0 and not wrecked and hp > 0.0:
+		hp = minf(hp + regen * delta, 100.0)
 	if not controls_enabled or wrecked or stun_t > 0.0:
 		engine_force = 0.0
 		brake = 1.0 if wrecked else 0.3

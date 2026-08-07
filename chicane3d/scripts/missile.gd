@@ -99,6 +99,11 @@ func _physics_process(delta: float) -> void:
 		if global_position.distance_to(v.global_position + Vector3.UP * 0.5) < HIT_RANGE:
 			_explode()
 			return
+	# slam into roadside buildings too
+	if race.destructibles:
+		for b in race.destructibles.query_radius(global_position, HIT_RANGE * 0.5):
+			_explode()
+			return
 
 func _explode() -> void:
 	if race != null and is_instance_valid(race):
