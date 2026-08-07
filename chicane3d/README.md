@@ -1,18 +1,14 @@
 # CHICANE: FULL THROTTLE 3D
 
-> ### ⚠ IMPORTANT — to see the REAL imported car models
-> The game ships as several zips (transfer size limit). **Extract every
-> "models" zip into the SAME folder as the game zip** so that
-> `chicane3d/assets/models/` exists, then start the game. Your imported
-> models ARE the cars — if you launch with only the game zip, cars use
-> stand-in procedural bodies and the game shows a red warning at the
-> bottom of the menu until the packs are installed.
-
 A fully 3D open-road hypercar racing game with police pursuits, real vehicle
-physics and BeamNG-style crash deformation — built in Godot 4.
+physics, BeamNG-style crash deformation and an unlimited-ammo weapon loadout —
+built in Godot 4.
 
-Everything is procedural: the cars, the tracks, the seven districts of Velora
-Coast, even the music and sound effects. No downloaded assets.
+Everything is procedural: the tracks, the seven districts of Velora Coast,
+even the music and sound effects. Car models come from a bundled CC0 pack
+(Kenney Car Kit, `chicane_kenney_models_pack1.zip` — auto-installs on first
+launch); without it the game seamlessly uses procedural car bodies. Optional
+higher-detail model packs drop into the same folder and install themselves.
 
 ## How to run it (3 steps, ~2 minutes)
 
@@ -36,9 +32,12 @@ If the window opens black or crashes on an older PC: in Godot go to
 | SPACE | Handbrake — hold + steer to drift |
 | B / V | Gear up / down *(manual transmission mode)* |
 | SHIFT / N | Nitrous |
+| F / G / H | Fire weapon slots 1-3 *(pick your 3 in Main Menu → WEAPONS)* |
+| Q | Weapon inventory overlay |
+| Z | Warp speed — 10 s at 3× velocity |
 | T | Turbo burst |
 | E | EMP blast · start event at a marker *(Velocity County)* |
-| Q | Spike strip *(cop career)* |
+| K | Spike strip *(cop career)* |
 | R | Call roadblock *(cop career)* |
 | C | Camera (chase / far / hood) |
 | X | Reset car onto the road |
@@ -66,6 +65,14 @@ If the window opens black or crashes on an older PC: in Godot go to
   that tear off as physics debris, wheel-killing spike strips, engine smoke
   and fire, slow-motion crash cam, and traffic that goes flying, tumbling and
   crumpling when you hit it. Damage changes how your car drives.
+- **Weapons** — pick any 3 of 10 (missiles, machine guns, blade wings,
+  chainsaw, wrecking ball, bombs, flamethrower, freeze ray, EMP, shockwave),
+  all unlimited ammo. Destroyed cars respawn after 10 seconds. Hit **Q**
+  in a race for your live inventory.
+- **Warp speed, god mode & radar** — [Z] triple-speed burst; Settings
+  toggles for invincibility and a rotating proximity radar.
+- **Every car free to drive** — the garage unlocks any non-secret car
+  instantly; secrets still require their challenges.
 - **Saves automatically** to your user folder after every event.
 
 ## Project layout (for curious modders)
@@ -255,3 +262,34 @@ the Formula 78; three new cars — **Goblin V12** (Track Hypercar, $195k),
 (Compact, $16k, extracted from a low-poly pack). Hold **TAB** (right-stick
 click) to look behind you. `scenes/tests/Bench.tscn` benchmarks world-gen time
 and frame cost. See CHANGELOG.md and KNOWN_ISSUES.md.
+
+
+## v9 — Bundled models, arsenal & quality-of-life
+
+- **Bundled CC0 car models** — all 21 bodywork skins now ship in a 0.7 MB
+  pack generated from Kenney's Car Kit (CC0, hue-shifted per skin so every
+  bodywork reads distinct); regenerate with `tools/convert_car_models.gd`.
+  Wheels on every bundled skin split onto the physics hubs and spin/steer.
+- **Pick-3 weapon loadout** with unlimited ammo (10 weapons), a live [Q]
+  inventory overlay, and a 10-second respawn for everything you destroy.
+- **Warp speed** ([Z], 3× for 10 s), **god mode** and a rotating
+  **proximity radar** (both in Settings → Gameplay).
+- **Lighting overhaul** + Brightness slider; glossy clearcoat paint on all
+  cars, imported and procedural.
+- **Every non-secret car free to drive** from the garage.
+- Validation suite: **274 checks**, plus scripted bot races that fire the
+  full loadout and verify blow-ups, respawns and warp end-to-end.
+
+## Shipping builds
+
+`export_presets.cfg` ships with Windows, Linux and Web presets. Install the
+export templates once (Godot → Editor → Manage Export Templates) and then
+*Project → Export* produces distributable builds into `../dist/`, or from a
+terminal: `godot --headless --path chicane3d --export-release Windows`.
+
+## Credits & license notes
+
+- Car models: ["Car Kit" by Kenney](https://kenney.nl/assets/car-kit) —
+  CC0, vendored under `tools/kenney_car_kit/`.
+- Everything else (code, tracks, audio, procedural cars) is original to
+  this project.

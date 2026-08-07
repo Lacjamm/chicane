@@ -126,12 +126,12 @@ func show_title() -> void:
 	var t2 := _lbl("FULL THROTTLE 3D", 30, CYAN)
 	t2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(t2)
-	var tag := _lbl("Velora Coast is waiting. Every race can become a chase.", 16, GREY)
+	var tag := _lbl("Velora Coast is waiting. Every race can become a chase.  ·  %s" % D.VERSION, 16, GREY)
 	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(tag)
 	v.add_child(HSeparator.new())
 	v.add_child(_btn("START ENGINE", show_menu.bind(), true))
-	var hint := _lbl("WASD/arrows drive · SPACE handbrake · SHIFT nitrous · E EMP · T turbo\nC camera · X reset car · M radio · ESC pause", 13, GREY)
+	var hint := _lbl("WASD/arrows drive · SPACE handbrake · SHIFT nitrous · F/G/H weapons · Q inventory · Z warp · E EMP · T turbo\nC camera · X reset car · M radio · ESC pause", 13, GREY)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(hint)
 
@@ -163,6 +163,7 @@ func show_menu() -> void:
 	grid.add_child(_btn("COP CAREER  (%d/%d arrests)" % [P.data.cop_wins.size(), D.COP_EVENTS.size()], show_cop.bind()))
 	grid.add_child(_btn("FREE DRIVE", show_free.bind()))
 	grid.add_child(_btn("GARAGE  (%d cars)" % P.data.cars.size(), show_garage.bind()))
+	grid.add_child(_btn("WEAPONS  (%s)" % " / ".join(P.loadout().map(func(wid): return D.WEAPONS[wid].name)), show_weapons.bind()))
 	grid.add_child(_btn("SECRET CARS  (%d/%d)" % [P.data.secrets.size(), D.SECRET_CARS.size()], show_secrets.bind()))
 	grid.add_child(_btn("SETTINGS", show_settings.bind()))
 
@@ -275,7 +276,7 @@ func show_cop() -> void:
 				show_cop(), P.data.cop_cur == c.id, locked)
 		carrow.add_child(b)
 	v.add_child(carrow)
-	v.add_child(_lbl("Weapons: [E] EMP · [Q] spike strip · [R] roadblock · [T] turbo · SHIFT nitrous. Ram the suspect to 0%%.", 14, GREY))
+	v.add_child(_lbl("Weapons: [F]/[G]/[H] your loadout · [Q] inventory · [E] EMP · [K] spike strip · [R] roadblock · [T] turbo · SHIFT nitrous. Ram the suspect to 0%%.", 14, GREY))
 	for i in D.COP_EVENTS.size():
 		var m: Dictionary = D.COP_EVENTS[i]
 		var open := P.cop_mission_unlocked(i)
@@ -336,6 +337,40 @@ func show_free() -> void:
 
 # ================= GARAGE =================
 	_focus_first()
+
+# ================= WEAPON LOADOUT =================
+# Pick exactly 3 — clicking a 4th weapon swaps out the oldest pick.
+func show_weapons() -> void:
+	_clear(); _bg()
+	var v := _scroll_panel()
+	var head := HBoxContainer.new()
+	head.add_child(_btn("< Back", show_menu.bind()))
+	head.add_child(_lbl("  WEAPON LOADOUT", 28, PINK))
+	v.add_child(head)
+	v.add_child(_lbl("Choose 3 weapons for your slot keys [F] [G] [H]  (pad: LS-click / Y / RB). Unlimited ammo on everything. In a race, hit [Q] for your inventory.", 14, GREY))
+	var lo := P.loadout()
+	for wid in D.WEAPONS:
+		var wd: Dictionary = D.WEAPONS[wid]
+		var slot := lo.find(wid)
+		var tag := "  —  SLOT %d [%s]" % [slot + 1, ["F", "G", "H"][slot]] if slot >= 0 else ""
+		var b := _btn("%s%s\n%s" % [wd.name, tag, wd.desc], _toggle_weapon.bind(wid), slot >= 0)
+		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		if slot >= 0: b.modulate = Color(0.75, 1.0, 0.78)
+		v.add_child(b)
+	_focus_first()
+
+func _toggle_weapon(wid: String) -> void:
+	var lo := P.loadout()
+	if wid in lo:
+		if lo.size() > 1:
+			lo.erase(wid)
+	else:
+		lo.append(wid)
+		while lo.size() > 3:
+			lo.pop_front()
+	P.data.loadout = lo
+	P.save_game()
+	show_weapons()
 
 func show_garage(sel := "") -> void:
 	_clear(); _bg()
@@ -412,14 +447,14 @@ func _build_preview() -> void:
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = Color(0.05, 0.04, 0.1)
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.5, 0.5, 0.65)
-	env.ambient_light_energy = 0.8
+	env.ambient_light_color = Color(0.6, 0.6, 0.72)
+	env.ambient_light_energy = 1.2
 	env.glow_enabled = true
 	var we := WorldEnvironment.new(); we.environment = env
 	world.add_child(we)
 	var sun := DirectionalLight3D.new()
 	sun.rotation_degrees = Vector3(-40, 30, 0)
-	sun.light_energy = 1.2
+	sun.light_energy = 1.6
 	world.add_child(sun)
 	var floor_mesh := MeshInstance3D.new()
 	var pm := PlaneMesh.new(); pm.size = Vector2(20, 20)
@@ -579,17 +614,14 @@ func _garage_detail(det: VBoxContainer) -> void:
 	elif is_secret:
 		det.add_child(_lbl("Unlocked — free in your garage.", 14, GOOD))
 	else:
-		var afford: bool = P.data.cash >= def.price
-		det.add_child(_btn("BUY — $%d" % def.price, func():
-			if P.data.cash >= def.price:
-				P.data.cash -= def.price
-				P.give_car(id)
-				P.data.cur = id
-				P.save_game()
-				SFX.play("ui_win", -6.0)
-				show_garage(id), true, not afford))
-		if not afford:
-			det.add_child(_lbl("Not enough cash — win races!", 13, GREY))
+		# v9.4: every car is free to drive — pick whatever you want.
+		det.add_child(_btn("DRIVE THIS — FREE", func():
+			P.give_car(id)
+			P.data.cur = id
+			P.save_game()
+			SFX.play("ui_win", -6.0)
+			show_garage(id), true))
+		det.add_child(_lbl("All cars are unlocked — jump in and drive.", 13, GREY))
 
 # ================= SECRETS =================
 func show_secrets() -> void:
@@ -646,6 +678,7 @@ func show_settings() -> void:
 			S.set_s("quality", qi)
 			show_settings(), int(S.g("quality")) == qi))
 	v.add_child(qrow)
+	_slider(v, "Brightness", "brightness", 0.6, 1.6)
 	_slider(v, "Field of view offset", "fov", -10.0, 15.0)
 	_slider(v, "Camera shake", "cam_shake", 0.0, 1.0)
 	_slider(v, "Chase camera distance", "cam_dist", 0.75, 1.45)
@@ -683,6 +716,15 @@ func show_settings() -> void:
 	v.add_child(vrow)
 	v.add_child(_lbl("Gameplay", 16, WARN))
 	_slider(v, "Traffic density", "traffic", 0.0, 1.5)
+	var grow := HBoxContainer.new()
+	grow.add_child(_btn("God mode: %s" % ("ON" if S.g("god_mode") else "OFF"), func():
+		S.set_s("god_mode", not S.g("god_mode"))
+		show_settings()))
+	grow.add_child(_btn("Radar: %s" % ("ON" if S.g("radar") else "OFF"), func():
+		S.set_s("radar", not S.g("radar"))
+		show_settings()))
+	v.add_child(grow)
+	v.add_child(_lbl("God mode: your car takes no damage, EMP stuns or spike strips. Radar: nearby-car blips above the damage bar.", 12, GREY))
 	v.add_child(_lbl("Radio", 16, WARN))
 	var rrow := HBoxContainer.new()
 	for r in D.RADIO:
@@ -693,8 +735,8 @@ func show_settings() -> void:
 			show_settings(), P.data.station == r.id))
 	v.add_child(rrow)
 	v.add_child(HSeparator.new())
-	v.add_child(_lbl("Keyboard: WASD/arrows · SPACE handbrake · SHIFT nitrous · E EMP · Q spikes · R roadblock · T turbo · C camera · X reset · M radio · ESC pause", 12, GREY))
-	v.add_child(_lbl("Controller: RT throttle · LT brake · Left stick steer · X handbrake · A nitrous · Y EMP · B turbo · LB spikes · RB roadblock · Back camera · D-pad up reset · Start pause", 12, GREY))
+	v.add_child(_lbl("Keyboard: WASD/arrows · SPACE handbrake · SHIFT nitrous · F/G/H weapon slots · Q inventory · Z warp · E EMP · K spikes · R roadblock · T turbo · C camera · X reset · M radio · ESC pause", 12, GREY))
+	v.add_child(_lbl("Controller: RT throttle · LT brake · Left stick steer · X handbrake · A nitrous · LS-click/Y/RB weapon slots · D-pad left warp · B turbo · LB spikes · Back camera · D-pad up reset · Start pause", 12, GREY))
 	v.add_child(_btn("RESET ALL PROGRESS", _confirm_reset.bind()))
 	_focus_first()
 

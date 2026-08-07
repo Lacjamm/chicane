@@ -19,9 +19,10 @@ static func paint_material(hex: String, finish: String) -> StandardMaterial3D:
 			m.albedo_color = Color(0.09, 0.09, 0.11); m.roughness = 0.4; m.metallic = 0.4
 		"chrome":
 			m.albedo_color = Color(0.9, 0.92, 0.95); m.roughness = 0.05; m.metallic = 1.0
-		_: # gloss
-			m.albedo_color = col; m.roughness = 0.15; m.metallic = 0.55
-			m.clearcoat_enabled = true; m.clearcoat = 0.8
+		_: # gloss — showroom clearcoat paint
+			m.albedo_color = col; m.roughness = 0.12; m.metallic = 0.6
+			m.metallic_specular = 0.7
+			m.clearcoat_enabled = true; m.clearcoat = 1.0; m.clearcoat_roughness = 0.1
 	m.cull_mode = BaseMaterial3D.CULL_DISABLED   # lofted hulls must read solid from every angle
 	return m
 
@@ -326,7 +327,7 @@ static func wheel_visual(radius: float) -> Node3D:
 	rc.height = 0.34; rc.top_radius = radius * 0.55; rc.bottom_radius = radius * 0.55
 	rim.mesh = rc
 	rim.rotation_degrees = Vector3(0, 0, 90)
-	var rm := StandardMaterial3D.new(); rm.albedo_color = Color(0.30, 0.31, 0.34); rm.metallic = 0.85; rm.roughness = 0.42
+	var rm := StandardMaterial3D.new(); rm.albedo_color = Color(0.55, 0.57, 0.62); rm.metallic = 1.0; rm.roughness = 0.22
 	rim.material_override = rm
 	n.add_child(rim)
 	return n
@@ -415,6 +416,35 @@ static func _skin_scene(path: String) -> PackedScene:
 		_skin_cache[path] = ps
 	return _skin_cache[path]
 
+# Imported packs (e.g. the bundled Kenney CC0 kit) arrive fully matte.
+# Give bodywork a glossy clearcoat car-paint finish and wheels a rubber/alloy
+# look. Body materials are shared per-skin, so mutating them is idempotent;
+# wheels get a per-node override duplicated from the shared material.
+static func _polish_imported(meshes: Array) -> void:
+	var polished := {}
+	for m in meshes:
+		var mi: MeshInstance3D = m.mi
+		if _is_wheel_name(str(mi.name)):
+			var src := mi.get_active_material(0)
+			if src is BaseMaterial3D and mi.material_override == null:
+				var rubber: BaseMaterial3D = src.duplicate()
+				rubber.metallic = 0.15
+				rubber.roughness = 0.55
+				rubber.clearcoat_enabled = false
+				mi.material_override = rubber
+			continue
+		if mi.mesh == null: continue
+		for si in mi.mesh.get_surface_count():
+			var mat := mi.get_active_material(si)
+			if mat is BaseMaterial3D and not polished.has(mat):
+				polished[mat] = true
+				mat.metallic = 0.45
+				mat.metallic_specular = 0.65
+				mat.roughness = 0.28
+				mat.clearcoat_enabled = true
+				mat.clearcoat = 0.7
+				mat.clearcoat_roughness = 0.12
+
 static func _collect_meshes(node: Node, xf: Transform3D, out: Array) -> void:
 	if node is Node3D:
 		xf = xf * (node as Node3D).transform
@@ -476,6 +506,7 @@ static func build_model_visual(skin_id: String, shape: Dictionary) -> Node3D:
 		else:
 			cleaned.append(m)
 	meshes = cleaned
+	_polish_imported(meshes)
 	if meshes.is_empty():
 		root.add_child(inst)
 		return root

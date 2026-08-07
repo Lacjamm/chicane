@@ -25,6 +25,7 @@ var flame_r: GPUParticles3D
 
 var _flash_t := 0.0
 var _detached := {}
+var _vis := {}                  # visual config kept for rebuild_visual()
 
 func kmh() -> float:
 	return linear_velocity.length() * 3.6
@@ -41,20 +42,8 @@ func setup(id: String, s: Dictionary, paint: String, finish: String, police := f
 	contact_monitor = true
 	max_contacts_reported = 6
 
-	# v5: cars with imported model skins use them by default ("proc" = procedural)
-	# v7: if the model files are not installed, fall back to the procedural
-	# body silently — the game must stay fully playable without model packs.
-	var use_skin := skin
-	if (use_skin == "" or (use_skin != "proc" and not D.skin_ok(use_skin))) and def.has("skins"):
-		use_skin = ""
-		for s2 in def.skins:
-			if D.skin_ok(str(s2)):
-				use_skin = str(s2)
-				break
-	if use_skin != "" and use_skin != "proc" and D.skin_ok(use_skin):
-		visual = CarFactory.build_model_visual(use_skin, shape)
-	else:
-		visual = CarFactory.build_visual(paint, finish, shape, police)
+	_vis = {"paint": paint, "finish": finish, "police": police, "skin": skin, "shape": shape}
+	visual = _make_visual()
 	add_child(visual)
 
 	# chassis collision
@@ -97,6 +86,41 @@ func setup(id: String, s: Dictionary, paint: String, finish: String, police := f
 		wheels.append(wheel)
 
 	_make_particles()
+
+# v5: cars with imported model skins use them by default ("proc" = procedural)
+# v7: if the model files are not installed, fall back to the procedural
+# body silently — the game must stay fully playable without model packs.
+func _make_visual() -> Node3D:
+	var def := D.car_def(car_id)
+	var use_skin: String = _vis.skin
+	if (use_skin == "" or (use_skin != "proc" and not D.skin_ok(use_skin))) and def.has("skins"):
+		use_skin = ""
+		for s2 in def.skins:
+			if D.skin_ok(str(s2)):
+				use_skin = str(s2)
+				break
+	if use_skin != "" and use_skin != "proc" and D.skin_ok(use_skin):
+		return CarFactory.build_model_visual(use_skin, _vis.shape)
+	return CarFactory.build_visual(_vis.paint, _vis.finish, _vis.shape, _vis.police)
+
+# v9.7 — respawn support: throw away the crumpled/burnt body and build a
+# pristine one, remounting wheel visuals on the existing physics wheels.
+func rebuild_visual() -> void:
+	for w in wheels:
+		for c in w.get_children():
+			c.queue_free()
+	if visual and is_instance_valid(visual):
+		visual.queue_free()
+	_detached.clear()
+	visual = _make_visual()
+	add_child(visual)
+	var wsets: Dictionary = visual.get_meta("wheelsets") if visual.has_meta("wheelsets") else {}
+	var order := ["wfl", "wfr", "wrl", "wrr"]
+	for i in wheels.size():
+		if wsets.has(order[i]):
+			wheels[i].add_child(wsets[order[i]].node)
+		elif not visual.has_meta("model_skin"):
+			wheels[i].add_child(CarFactory.wheel_visual(0.36))
 
 func _make_particles() -> void:
 	smoke = _particles(Color(0.35, 0.35, 0.38, 0.5), 1.6, 24, Vector3(0, 1.5, 0), 2.2)

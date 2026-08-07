@@ -38,6 +38,7 @@ var wpn_lbl: Label
 var nos_bar: ProgressBar
 var dial: Control
 var map_ctl: Control
+var radar_ctl: Control
 var _map_pts: PackedVector2Array = []
 
 func bind(r: RaceManager) -> void:
@@ -154,6 +155,13 @@ func _build() -> void:
 	map_ctl.offset_left = 14; map_ctl.offset_top = -105
 	map_ctl.draw.connect(_draw_map)
 	add_child(map_ctl)
+	# v9.5 — proximity radar: player-centred, rotates with the car
+	radar_ctl = Control.new()
+	radar_ctl.set_anchors_preset(Control.PRESET_BOTTOM_LEFT)
+	radar_ctl.custom_minimum_size = Vector2(140, 140)
+	radar_ctl.offset_left = 14; radar_ctl.offset_top = -246
+	radar_ctl.draw.connect(_draw_radar)
+	add_child(radar_ctl)
 
 	# --- bottom-left: damage + weapons ---
 	var bl := VBoxContainer.new()
@@ -161,9 +169,9 @@ func _build() -> void:
 	bl.offset_left = 18; bl.offset_top = -92; bl.offset_bottom = -14
 	add_child(bl)
 	var drow := HBoxContainer.new(); bl.add_child(drow)
-	var dtag := _mk_label(12, GREY); dtag.text = "DMG "; dtag.custom_minimum_size.x = 44
+	var dtag := _mk_label(12, GREY); dtag.text = "HEALTH "; dtag.custom_minimum_size.x = 60
 	drow.add_child(dtag)
-	dmg_bar = _mk_bar(BAD); drow.add_child(dmg_bar)
+	dmg_bar = _mk_bar(GOOD, 220.0, 16.0); drow.add_child(dmg_bar)
 	wpn_lbl = _mk_label(14, Color(0.6, 0.78, 0.9))
 	bl.add_child(wpn_lbl)
 
@@ -300,19 +308,36 @@ func _process(_delta: float) -> void:
 	# callout
 	callout_lbl.text = race.pos_announce
 	callout_lbl.modulate.a = clampf(race.pos_announce_t / 0.5, 0.0, 1.0)
-	# bottom
-	dmg_bar.value = 100.0 - P.hp
+	# bottom — health bar drains green → amber → red
+	dmg_bar.value = P.hp
+	var hb := dmg_bar.get_theme_stylebox("fill") as StyleBoxFlat
+	if hb:
+		hb.bg_color = GOOD if P.hp > 55.0 else WARN if P.hp > 25.0 else BAD
 	var pad: bool = S.last_device_pad
-	var k_emp := "Y" if pad else "E"
+	var k_emp := "E"
 	var k_turbo := "B" if pad else "T"
-	var k_spike := "LB" if pad else "Q"
+	var k_spike := "LB" if pad else "K"
 	var k_block := "RB" if pad else "R"
+	var slot_keys := ["LS", "Y", "RB"] if pad else ["F", "G", "H"]
 	var w := []
+	if race.weapons:
+		for i in race.weapons.slots.size():
+			var wid: String = race.weapons.slots[i]
+			var wname: String = D.WEAPONS[wid].name.to_upper()
+			var status: String = "∞" if race.weapons.cds[i] <= 0.0 else "…"
+			if race.weapons.active.has(wid): status = "ACTIVE"
+			w.append("[%s] %s %s" % [slot_keys[i], wname, status])
+	var k_warp := "D◀" if pad else "Z"
+	var warp_status: String = ("%.0fs" % ceilf(P.warp_t)) if P.warp_t > 0.0 else ("RDY" if race.cd_warp <= 0.0 else "…")
+	w.append("[%s] WARP %s" % [k_warp, warp_status])
 	w.append("[%s] EMP %s" % [k_emp, str(race.w_emp) if race.w_emp < 99 else ("RDY" if race.cd_emp <= 0 else "…")])
 	w.append("[%s] TURBO %s" % [k_turbo, str(race.w_turbo) if race.w_turbo < 99 else ("RDY" if race.cd_turbo <= 0 else "…")])
+	if bool(S.g("god_mode")):
+		w.append("⚡GOD MODE")
 	if race.career == "cop":
 		w.append("[%s] SPIKE %d" % [k_spike, race.w_spike])
 		w.append("[%s] BLOCK %d" % [k_block, race.w_block])
+	w.append("[Q] INVENTORY")
 	wpn_lbl.text = "   ".join(w)
 	wrong_lbl.visible = race.wrong_way and int(race.t * 4.0) % 2 == 0
 	# status stack
@@ -324,6 +349,10 @@ func _process(_delta: float) -> void:
 	nos_bar.value = P.nitro * 100.0
 	dial.queue_redraw()
 	map_ctl.queue_redraw()
+	radar_ctl.visible = bool(S.g("radar"))
+	if radar_ctl.visible: radar_ctl.queue_redraw()
+	if inv_panel and inv_panel.visible:
+		_update_inventory()
 	if flash_rect.color.a > 0.0:
 		flash_rect.color.a = maxf(flash_rect.color.a - _delta * 3.0, 0.0)
 
@@ -410,6 +439,39 @@ func _draw_map() -> void:
 			dot.call(cp.progress, Color(1, 0.15, 0.15) if int(race.t * 8.0) % 2 == 0 else Color(0.2, 0.35, 1), 3.0)
 	dot.call(race.player.progress, GOOD, 4.5)
 
+# v9.5 — proximity radar: player-centred blips for everything on the road.
+# Rivals orange, cops blue, suspect red, traffic grey. Racers beyond range
+# are pinned to the rim so you always know which way they are.
+func _draw_radar() -> void:
+	if race == null or race.player == null: return
+	var c := Vector2(70, 70)
+	var rad := 66.0
+	var range_m := 90.0
+	radar_ctl.draw_circle(c, rad, Color(0.02, 0.03, 0.07, 0.55))
+	radar_ctl.draw_arc(c, rad, 0, TAU, 40, Color(0.5, 0.9, 0.5, 0.35), 1.5, true)
+	radar_ctl.draw_arc(c, rad * 0.5, 0, TAU, 32, Color(0.5, 0.9, 0.5, 0.18), 1.0, true)
+	# player: small triangle pointing up (radar rotates with the car)
+	radar_ctl.draw_colored_polygon(PackedVector2Array([c + Vector2(0, -6), c + Vector2(4.5, 5), c + Vector2(-4.5, 5)]), GOOD)
+	var inv := race.player.global_transform.affine_inverse()
+	for v in race.all_vehicles():
+		if not is_instance_valid(v) or v == race.player: continue
+		var l: Vector3 = inv * v.global_position
+		var p := c + Vector2(l.x, l.z) * (rad / range_m)   # -z forward -> up
+		var racer: bool = v is AICar
+		if not racer and p.distance_to(c) > rad - 3.0:
+			continue                        # traffic drops off the edge
+		var col := Color(0.62, 0.64, 0.68)  # traffic grey
+		if racer:
+			col = Color(0.35, 0.55, 1.0) if v.role == AICar.Role.COP \
+				else Color(1.0, 0.25, 0.2) if v.role == AICar.Role.TARGET \
+				else Color(1.0, 0.55, 0.1)
+			if v.wrecked: col = col.darkened(0.55)
+		var out := p - c
+		if out.length() > rad - 3.0:
+			p = c + out.normalized() * (rad - 3.0)
+			col.a = 0.55
+		radar_ctl.draw_circle(p, 4.0 if racer else 2.8, col)
+
 # Roam: zoomed local map — a readable window of road around the player
 # with event markers (cyan), barn finds (gold) and speed cameras (yellow).
 func _draw_map_local() -> void:
@@ -453,6 +515,9 @@ func _draw_map_local() -> void:
 	for cp in race.cops:
 		if is_instance_valid(cp) and not cp.dead and on_map.call(cp.progress):
 			world_dot.call(cp.progress, Color(1, 0.15, 0.15) if int(race.t * 8.0) % 2 == 0 else Color(0.2, 0.35, 1), 3.0)
+	for rv in race.rivals:
+		if is_instance_valid(rv) and not rv.dead and on_map.call(rv.progress):
+			world_dot.call(rv.progress, Color(1.0, 0.45, 0.1), 3.0)
 	# player: position + heading arrow
 	var ppos: Vector2 = xf.call(Vector2(race.player.global_position.x, race.player.global_position.z))
 	var fwd3 := -race.player.global_transform.basis.z
@@ -470,6 +535,66 @@ func countdown(cd: float) -> void:
 	elif n > 0:
 		count_lbl.text = str(n)
 
+# ---------- v9.6: weapon inventory overlay ([Q]) ----------
+var inv_panel: PanelContainer = null
+var inv_lbl: Label = null
+
+func toggle_inventory() -> void:
+	if inv_panel == null:
+		_build_inventory()
+	inv_panel.visible = not inv_panel.visible
+
+func _build_inventory() -> void:
+	inv_panel = PanelContainer.new()
+	var sb := StyleBoxFlat.new()
+	sb.bg_color = Color(0.03, 0.03, 0.09, 0.92)
+	sb.set_corner_radius_all(12)
+	sb.set_content_margin_all(16)
+	sb.border_color = CYAN
+	sb.set_border_width_all(1)
+	inv_panel.add_theme_stylebox_override("panel", sb)
+	inv_panel.set_anchors_preset(Control.PRESET_CENTER_RIGHT)
+	inv_panel.offset_left = -470
+	inv_panel.offset_right = -20
+	inv_panel.offset_top = -180
+	var v := VBoxContainer.new()
+	inv_panel.add_child(v)
+	var title := _mk_label(22, CYAN)
+	title.text = "WEAPON INVENTORY          [Q] close"
+	v.add_child(title)
+	inv_lbl = _mk_label(15)
+	v.add_child(inv_lbl)
+	var foot := _mk_label(12, GREY)
+	foot.text = "Change your 3-weapon loadout in Main Menu → WEAPONS"
+	v.add_child(foot)
+	inv_panel.visible = false
+	add_child(inv_panel)
+
+func _update_inventory() -> void:
+	var pad: bool = S.last_device_pad
+	var keys := ["LS", "Y", "RB"] if pad else ["F", "G", "H"]
+	var lines := []
+	if race.weapons:
+		for i in race.weapons.slots.size():
+			var wid: String = race.weapons.slots[i]
+			var wd: Dictionary = D.WEAPONS[wid]
+			var status := "READY"
+			if race.weapons.active.has(wid):
+				status = "ACTIVE %ds" % int(ceil(race.weapons.active[wid]))
+			elif race.weapons.cds[i] > 0.0:
+				status = "%.1fs" % race.weapons.cds[i]
+			lines.append("[%s] %s — %s\n      %s" % [keys[i], wd.name.to_upper(), status, wd.desc])
+	lines.append("")
+	var p := race.player
+	var warp_s := ("ACTIVE %ds" % int(ceil(p.warp_t))) if p.warp_t > 0.0 \
+		else ("READY" if race.cd_warp <= 0.0 else "%.0fs" % race.cd_warp)
+	lines.append("[Z] WARP SPEED — %s   ·   10s at 3× velocity" % warp_s)
+	lines.append("[E] EMP — %s   ·   [T] TURBO — %s" %
+		["∞" if race.w_emp >= 99 else str(race.w_emp), "∞" if race.w_turbo >= 99 else str(race.w_turbo)])
+	if race.career == "cop":
+		lines.append("[K] SPIKES — %d   ·   [R] ROADBLOCK — %d" % [race.w_spike, race.w_block])
+	inv_lbl.text = "\n".join(lines)
+
 func toast(txt: String, cls := "") -> void:
 	var l := _mk_label(15, GOOD if cls == "good" else BAD if cls == "bad" else WARN if cls == "warn" else Color.WHITE)
 	l.text = txt
@@ -482,6 +607,18 @@ func big_message(txt: String) -> void:
 	big_lbl.text = txt
 	big_lbl.visible = true
 	get_tree().create_timer(2.4, true, false, true).timeout.connect(func(): big_lbl.visible = false)
+
+# v9.7 — "RESPAWN IN n" countdown after a RIP (count_lbl is sized for huge
+# single digits, so shrink the font while it holds the longer message)
+func respawn_count(t: float) -> void:
+	if t <= 0.0:
+		count_lbl.text = ""
+		count_lbl.add_theme_color_override("font_color", WARN)
+		count_lbl.add_theme_font_size_override("font_size", 150)
+		return
+	count_lbl.add_theme_color_override("font_color", BAD)
+	count_lbl.add_theme_font_size_override("font_size", 46)
+	count_lbl.text = "RESPAWN IN %d" % int(ceil(t))
 
 func prompt(txt: String) -> void:
 	# persistent on-road interaction prompt ("" hides it)

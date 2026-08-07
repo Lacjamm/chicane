@@ -6,6 +6,7 @@ var phase := 0
 var timer := 0.0
 var log_t := 0.0
 var results: Array = []
+var _warped := false
 
 func _ready() -> void:
 	print("TEST: boot ok — profile cash=", P.data.cash, " diff=", P.data.diff)
@@ -33,6 +34,10 @@ func _launch(ev: Dictionary, career: String) -> void:
 func _on_finished(summary: Dictionary) -> void:
 	print("TEST RESULT[", phase, "]: ", race.result, " | ", summary.title, " | payout=", summary.payout,
 		" | top=", int(race.best_speed), "km/h | dmg=", int(100.0 - race.player.hp), "%")
+	if phase == 0:
+		print("TEST missiles: fired=", race.missiles_fired, " respawns=", race.respawns_done,
+			" queue=", race.respawn_queue.size(), " player_rips=", race.rips)
+		results.append("missile_ok" if race.missiles_fired > 0 and race.respawns_done > 0 else "missile_none")
 	results.append(race.result)
 	race.cleanup()
 	race.queue_free()
@@ -58,8 +63,8 @@ func _physics_process(delta: float) -> void:
 		_bot(delta)
 		if race.mode == "roam":
 			_roam_test()
-	# safety timeout per phase
-	if timer > 240.0:
+	# safety timeout per phase (generous — RIP respawns can lengthen races)
+	if timer > 320.0:
 		print("TEST TIMEOUT phase ", phase, " — state=", race.state, " prog=", race.player.progress)
 		results.append("timeout_harness")
 		race.cleanup(); race.queue_free(); race = null
@@ -70,6 +75,18 @@ func _physics_process(delta: float) -> void:
 func _bot(_delta: float) -> void:
 	var p := race.player
 	Input.action_press("accel")
+	# unlimited weapons: hammer the loadout through the first sprint to
+	# exercise blow-ups and the 10s respawn path end-to-end
+	if phase == 0 and timer > 5.0 and race.weapons:
+		race.weapons.fire_slot(0)                        # missile (cd-gated)
+		if int(timer) % 3 == 0: race.weapons.fire_slot(1)  # machine guns
+		if int(timer) % 5 == 0: race.weapons.fire_slot(2)  # bomb
+	# warp speed: engage once mid-sprint, verify the 3x cap unlocks
+	if phase == 0 and not _warped and timer > 15.0 and race.cd_warp <= 0.0:
+		_warped = true
+		race.cd_warp = 25.0
+		p.start_warp(10.0)
+		print("TEST warp engaged at kmh=", int(p.kmh()))
 	# steer toward a sensible lane / the target
 	var want_lat := 2.0
 	if race.mode == "intercept" and race.target and is_instance_valid(race.target):
@@ -128,8 +145,8 @@ func _bot(_delta: float) -> void:
 		Input.action_press("handbrake")
 	else:
 		Input.action_release("handbrake")
-	# recover if flipped/stopped
-	if p.kmh() < 4.0 and timer > 10.0 and int(timer * 60.0) % 240 == 0:
+	# recover if flipped/stopped (never during the RIP respawn countdown)
+	if p.kmh() < 4.0 and timer > 10.0 and not p.wrecked and int(timer * 60.0) % 240 == 0:
 		p.reset_to_track()
 
 func curvature_ahead() -> float:
@@ -187,6 +204,6 @@ func _wrap_up() -> void:
 	print("TEST: secrets after all-drift wins → ", P.data.secrets.keys())
 	print("TEST SUMMARY: ", results)
 	var pass_ok: bool = results.size() >= 5 and not results.has("timeout_harness") \
-		and not results.has("roam_fail")
+		and not results.has("roam_fail") and not results.has("missile_none")
 	print("TEST ", "PASS" if pass_ok else "PARTIAL")
 	get_tree().quit(0 if pass_ok else 1)

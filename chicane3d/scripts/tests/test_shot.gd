@@ -26,11 +26,19 @@ func _run() -> void:
 	Input.action_press("accel")
 	await _wait(11.0)
 	await _snap("race_neon")
+	race.hud.toggle_inventory()
+	await _wait(0.3)
+	await _snap("inventory")
+	race.hud.toggle_inventory()
 	race.player.take_impact(race.player.global_position + Vector3(0.5, 0.6, -1.8), Vector3(0.3, 0.2, 0.9), 24.0, 1.0)
 	CarFactory.detach(race.player.visual, "fbumper", Vector3(2, 5, 3))
 	race.hud.flash(true)
 	await _wait(0.4)
 	await _snap("crash_deform")
+	# force a death to capture the RIP! + respawn countdown
+	race.player.hp = 0.0
+	await _wait(1.6)
+	await _snap("rip_countdown")
 	race.cleanup(); race.queue_free()
 	await _wait(0.3)
 	# coastal
@@ -112,5 +120,7 @@ func _physics_process(_d: float) -> void:
 func _snap(name: String) -> void:
 	await RenderingServer.frame_post_draw
 	var img := get_viewport().get_texture().get_image()
-	img.save_png("/home/claude/chicane3d/shots/%s.png" % name)
+	var dir := ProjectSettings.globalize_path("res://shots")
+	DirAccess.make_dir_recursive_absolute(dir)
+	img.save_png(dir + "/%s.png" % name)
 	print("SNAP ", name)

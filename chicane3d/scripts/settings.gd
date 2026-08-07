@@ -24,6 +24,9 @@ const DEFAULTS := {
 	"cam_dist": 1.0,          # chase camera distance multiplier
 	"cam_height": 1.0,        # chase camera height multiplier
 	"rain_fx": true,          # rain particles in wet districts
+	"brightness": 1.0,        # v9.4 — world brightness multiplier 0.6..1.6
+	"god_mode": false,        # v9.5 — player takes no damage/stun/spikes
+	"radar": true,            # v9.5 — proximity radar blips on the HUD
 }
 
 var last_device_pad := false   # HUD prompt switching

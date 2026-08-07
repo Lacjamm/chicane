@@ -18,6 +18,7 @@ var nitro_heat := 0.0
 var overheated := false
 var nitro_on := false
 var turbo_t := 0.0
+var warp_t := 0.0               # v9.5 — warp speed remaining (3x velocity)
 var drifting := false
 var drift_time := 0.0
 var controls_enabled := true
@@ -109,6 +110,9 @@ func _surface_grip() -> float:
 func _drive(delta: float) -> void:
 	var speed := kmh()
 	var max_kmh: float = stats.kmh * (0.92 if hp < 40.0 else 1.0)
+	if warp_t > 0.0:
+		warp_t -= delta
+		max_kmh *= 3.0
 	if not controls_enabled or wrecked or stun_t > 0.0:
 		engine_force = 0.0
 		brake = 1.0 if wrecked else 0.3
@@ -146,7 +150,7 @@ func _drive(delta: float) -> void:
 	_was_nitro = nitro_on
 	_was_throttle = throttle_now
 	if backfire_t > 0.0: backfire_t -= delta
-	set_nitro_flames(nitro_on or turbo_t > 0.0 or backfire_t > 0.0)
+	set_nitro_flames(nitro_on or turbo_t > 0.0 or warp_t > 0.0 or backfire_t > 0.0)
 	if turbo_t > 0.0: turbo_t -= delta
 
 	# --- transmission drives the wheels ---
@@ -162,6 +166,7 @@ func _drive(delta: float) -> void:
 		backfire_t = maxf(backfire_t, 0.1)
 	if nitro_on: force *= 1.75 + stats.nitro * 0.035
 	if turbo_t > 0.0: force *= 1.9
+	if warp_t > 0.0: force *= 3.0
 	if hp < 65.0: force *= 0.88
 	var over_cap := speed > max_kmh * (1.22 if nitro_on else 1.0)
 	if reversing:
@@ -326,3 +331,22 @@ func _on_body_entered(body: Node) -> void:
 func use_turbo() -> void:
 	turbo_t = 1.8
 	apply_central_impulse(-global_transform.basis.z * mass * 6.0)
+
+# v9.5 — warp speed: 10 seconds at triple velocity
+func start_warp(dur := 10.0) -> void:
+	warp_t = dur
+	if is_inside_tree():
+		apply_central_impulse(-global_transform.basis.z * mass * 9.0)
+
+# v9.5 — god mode: no damage, no EMP stun, no shredded tyres
+func take_impact(world_pos: Vector3, dir: Vector3, severity: float, dmg_scale := 1.0) -> float:
+	if bool(S.g("god_mode")): return 0.0
+	return super.take_impact(world_pos, dir, severity, dmg_scale)
+
+func stun(duration: float) -> void:
+	if bool(S.g("god_mode")): return
+	super.stun(duration)
+
+func spike() -> void:
+	if bool(S.g("god_mode")): return
+	super.spike()

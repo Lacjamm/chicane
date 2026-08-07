@@ -135,6 +135,18 @@ func _respawn_ahead() -> void:
 	speed_kmh = randf_range(55.0, 95.0)
 	_place()
 
+# Missile kill: physics takes over and the shell gets launched skyward.
+# The regular _life_after_hit cleanup removes the carcass; RaceManager
+# spawns a fresh replacement after its respawn delay.
+func blow_up(from: Vector3) -> void:
+	if hit_free: return
+	hit_free = true
+	freeze = false
+	var dir := (global_position - from + Vector3.UP * 1.5).normalized()
+	CarFactory.deform(visual, from, dir, 1.4)
+	linear_velocity = dir * randf_range(9.0, 14.0) + Vector3.UP * 9.0
+	angular_velocity = Vector3(randf_range(-4, 4), randf_range(-6, 6), randf_range(-4, 4))
+
 func _on_hit(body: Node) -> void:
 	if hit_free: return
 	var rel := 0.0

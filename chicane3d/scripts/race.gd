@@ -50,7 +50,10 @@ var result := ""
 var summary := {}
 var slowmo_t := 0.0
 var slowmo_cd := 0.0
-var wreck_seq_t := 0.0
+# player death: RIP message + respawn countdown (seconds)
+const RIP_RESPAWN := 5.0
+var rip_t := 0.0
+var rips := 0
 var cop_spawn_t := 6.0
 var spike_trap_t := 9.0
 var block_t := 16.0
@@ -146,8 +149,18 @@ var cd_emp := 0.0
 var cd_turbo := 0.0
 var cd_spike := 0.0
 var cd_block := 0.0
+# missiles are unlimited — cooldown only
+var cd_missile := 0.0
+# warp speed: 10s at 3x velocity, then a recharge
+var cd_warp := 0.0
+var missiles_fired := 0
+var respawns_done := 0
+# blown-up cars come back after this long
+const RESPAWN_DELAY := 10.0
+var respawn_queue: Array = []
 
 var hud: Node = null
+var weapons: Node = null
 
 func start(event: Dictionary, in_career: String) -> void:
 	ev = event
@@ -220,11 +233,15 @@ func start(event: Dictionary, in_career: String) -> void:
 	hud = load("res://scripts/hud.gd").new()
 	add_child(hud)
 	hud.bind(self)
+	toast("Hit [Q] to bring up your weapon inventory", "")
 	SFX.set_station(P.data.station)
 	if mode == "roam":
 		roam = load("res://scripts/roam.gd").new()
 		add_child(roam)
 		roam.setup(self)
+	weapons = load("res://scripts/weapons.gd").new()
+	add_child(weapons)
+	weapons.setup(self)
 	if mode in ["free", "roam"]:
 		state = "racing"
 		cd_t = 0.0
@@ -244,8 +261,13 @@ func _environment() -> void:
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	env.ambient_light_energy = zone.ambient
+	# v9.4: global brightness lift — the zones read too dark, especially at
+	# night. Ambient gets a multiplier + floor, exposure comes up a touch,
+	# and the player can tune it further in Settings.
+	var bright: float = clampf(float(S.g("brightness")), 0.6, 1.6)
+	env.ambient_light_energy = clampf(zone.ambient * 1.7 + 0.14, 0.35, 2.2) * bright
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
+	env.tonemap_exposure = 1.18 * bright
 	env.glow_enabled = S.glow_enabled()
 	env.glow_intensity = 0.3
 	env.glow_bloom = 0.03
@@ -259,7 +281,7 @@ func _environment() -> void:
 	add_child(world_env)
 	sun = DirectionalLight3D.new()
 	sun.light_color = zone.sun
-	sun.light_energy = zone.sun_energy
+	sun.light_energy = zone.sun_energy * 1.35 + 0.15
 	sun.shadow_enabled = S.shadows_enabled()
 	sun.rotation_degrees = Vector3(-18.0 if zone.night else -38.0, 40, 0)
 	add_child(sun)
@@ -373,12 +395,14 @@ func _physics_process(delta: float) -> void:
 			player.controls_enabled = true
 			SFX.play("checkpoint", -4.0)
 		return
-	if wreck_seq_t > 0.0:
-		wreck_seq_t -= delta / maxf(Engine.time_scale, 0.05)
-		if wreck_seq_t <= 0.0:
-			Engine.time_scale = 1.0
+	if rip_t > 0.0:
+		rip_t -= delta / maxf(Engine.time_scale, 0.05)
+		if rip_t <= RIP_RESPAWN - 1.6 and Engine.time_scale < 1.0:
+			Engine.time_scale = 1.0     # slow-mo only for the death beat
 			hud.letterbox(false)
-			_end("wrecked")
+		hud.respawn_count(rip_t)
+		if rip_t <= 0.0:
+			_respawn_player()
 		return
 
 	best_speed = maxf(best_speed, player.kmh())
@@ -386,6 +410,7 @@ func _physics_process(delta: float) -> void:
 	if rain != null and player != null:
 		rain.global_position = player.global_position + player.linear_velocity * 0.55 + Vector3.UP * 11.0
 	_weapons_input(delta)
+	_respawns(delta)
 	_police(delta)
 	_near_miss_check()
 	_skills(delta)
@@ -461,14 +486,33 @@ func _slowmo(dur: float) -> void:
 	slowmo_cd = 9.0
 	hud.letterbox(true)
 
+# v9.7 — death is a setback, not a race-ender: RIP + 5s respawn countdown
 func _start_wreck() -> void:
 	player.wreck()
 	player.controls_enabled = false
 	Engine.time_scale = 0.35
-	wreck_seq_t = 2.6
+	rip_t = RIP_RESPAWN
+	rips += 1
 	hud.letterbox(true)
-	hud.big_message("TOTALED!")
+	hud.big_message("RIP!")
 	SFX.crash(true)
+
+func _respawn_player() -> void:
+	rip_t = 0.0
+	Engine.time_scale = 1.0
+	hud.letterbox(false)
+	hud.respawn_count(0.0)
+	player.hp = 100.0
+	player.wrecked = false
+	player.stun_t = 0.0
+	player.spike_t = 0.0
+	player.brake = 0.0
+	player.nitro = maxf(player.nitro, 0.5)
+	player.rebuild_visual()
+	player.reset_to_track()
+	player.controls_enabled = true
+	toast("Respawned — go get 'em!", "good")
+	SFX.play("checkpoint", -4.0)
 
 # ============ WEAPONS ============
 func _weapons_input(delta: float) -> void:
@@ -476,10 +520,22 @@ func _weapons_input(delta: float) -> void:
 	cd_turbo = maxf(cd_turbo - delta, 0.0)
 	cd_spike = maxf(cd_spike - delta, 0.0)
 	cd_block = maxf(cd_block - delta, 0.0)
+	cd_missile = maxf(cd_missile - delta, 0.0)
+	cd_warp = maxf(cd_warp - delta, 0.0)
+	# [Q] weapon inventory — available even while stunned/spun out
+	if Input.is_action_just_pressed("inv") and hud:
+		hud.toggle_inventory()
 	if not player.controls_enabled: return
+	if Input.is_action_just_pressed("warp") and cd_warp <= 0.0:
+		cd_warp = 25.0
+		player.start_warp(10.0)
+		toast("WARP SPEED — 3× VELOCITY!", "good")
+		SFX.play("turbo_loop", -6.0)
+		if player.chase: player.chase.shake(4.0)
 	# in roam, E near a marker starts the event instead of firing the EMP
 	var emp_blocked: bool = roam != null and not roam.near_marker.is_empty()
 	if Input.is_action_just_pressed("emp") and not emp_blocked: _fire_emp()
+	if weapons: weapons.update(delta)   # the pick-3 loadout (wpn1/2/3)
 	if Input.is_action_just_pressed("turbo") and w_turbo > 0 and cd_turbo <= 0.0:
 		w_turbo -= 1; cd_turbo = 7.0
 		player.use_turbo()
@@ -520,6 +576,142 @@ func _fire_emp() -> void:
 			toast("EMP HIT!", "good")
 	else:
 		toast("EMP missed — no target in range", "warn")
+
+# ============ MISSILES (unlimited) ============
+func _fire_missile() -> void:
+	if cd_missile > 0.0: return
+	cd_missile = 0.9
+	missiles_fired += 1
+	# lock the nearest live car ahead (rivals, cops, suspects, traffic)
+	var best: Node3D = null
+	var best_gap := 1e9
+	for v in all_vehicles():
+		if not is_instance_valid(v): continue
+		if v is VehicleBase and v.wrecked: continue
+		if v is TrafficCar and v.hit_free: continue
+		var gap: float = v.progress - player.progress
+		if is_loop:
+			gap = fposmod(gap + length * 0.5, length) - length * 0.5
+		if gap > -12.0 and gap < 220.0 and absf(v.lateral - player.lateral) < 15.0:
+			if absf(gap) < best_gap:
+				best_gap = absf(gap)
+				best = v
+	var m: Node3D = load("res://scripts/missile.gd").new()
+	add_child(m)
+	m.global_transform = player.global_transform
+	m.global_position += -player.global_transform.basis.z * 2.6 + Vector3.UP * 0.8
+	m.setup(self, player, best)
+	SFX.play("blowoff", -6.0)
+
+func missile_blast(pos: Vector3) -> void:
+	SFX.crash(true)
+	if player and is_instance_valid(player) and player.chase:
+		player.chase.shake(8.0)
+	for v in all_vehicles():
+		if not is_instance_valid(v) or v == player: continue
+		if v.global_position.distance_to(pos) < 8.0:
+			destroy_vehicle(v, pos)
+	_blast_visual(pos)
+
+# One-shot destruction used by every weapon — routes through the wreck +
+# 10s-respawn pipeline regardless of what did the killing.
+func destroy_vehicle(v: Node3D, pos: Vector3) -> void:
+	var dir: Vector3 = v.global_position - pos + Vector3.UP * 1.5
+	dir = dir.normalized() if dir.length() > 0.1 else Vector3.UP
+	if v is TrafficCar:
+		if v.hit_free: return
+		v.blow_up(pos)
+		bounty += 60.0
+		respawn_queue.append({"kind": "traffic", "t": RESPAWN_DELAY})
+	elif v is AICar and not v.wrecked:
+		v.take_impact(pos, dir, 40.0, 2.0)      # crumple, shed panels, kill lights
+		v.hp = 0.0
+		v.wreck()
+		v.apply_central_impulse(dir * v.mass * 7.0 + Vector3.UP * v.mass * 5.0)
+		v.angular_velocity += Vector3(randf_range(-3, 3), randf_range(-6, 6), randf_range(-3, 3))
+		on_ai_wrecked(v)
+		if v.role == AICar.Role.RIVAL and not v.has_meta("boss"):
+			toast("RIVAL DESTROYED!", "good")
+		# the intercept TARGET stays down — wrecking it is the arrest condition
+		if v != target:
+			respawn_queue.append({"kind": "ai", "node": v, "id": v.car_id, "role": v.role,
+				"skill": v.skill, "paint": v.paint_col, "police": v.is_police,
+				"cop_role": v.cop_role, "lane": v.lane, "d": v.progress,
+				"boss": v.has_meta("boss"), "t": RESPAWN_DELAY})
+
+func _respawns(delta: float) -> void:
+	for i in range(respawn_queue.size() - 1, -1, -1):
+		var e: Dictionary = respawn_queue[i]
+		e.t -= delta
+		if e.t > 0.0: continue
+		respawn_queue.remove_at(i)
+		if e.kind == "traffic":
+			var tc := TrafficCar.new()
+			add_child(tc)
+			tc.setup_traffic(self, player.progress + randf_range(200.0, 500.0),
+				[-5.2, -2.2, 2.2, 5.2][randi() % 4], false)
+			traffic.append(tc)
+		else:
+			_respawn_ai(e)
+		respawns_done += 1
+
+func _respawn_ai(e: Dictionary) -> void:
+	# the burning husk lingers for the delay, then the fresh car takes its place
+	var old = e.node
+	var idx := -1
+	if is_instance_valid(old):
+		idx = rivals.find(old)
+		rivals.erase(old)
+		cops.erase(old)
+		old.queue_free()
+	var car := AICar.new()
+	car.setup_ai(e.id, e.role, e.skill, e.paint, e.police)
+	car.race = self
+	car.cop_role = e.cop_role
+	if e.boss: car.set_meta("boss", true)
+	add_child(car)
+	var d: float
+	if e.role == AICar.Role.COP:
+		d = maxf(player.progress - randf_range(90.0, 160.0), 4.0)
+		cops.append(car)
+	else:
+		d = e.d
+		if is_loop: d = fposmod(d, maxf(length, 1.0))
+		d = clampf(d, 4.0, length - 10.0)
+		car.lane = e.lane
+		if idx >= 0: rivals.insert(clampi(idx, 0, rivals.size()), car)
+		else: rivals.append(car)
+	_place_on_road(car, d, clampf(e.lane, -3.0, 3.0))
+	car.linear_velocity = -car.global_transform.basis.z * 18.0
+
+func _blast_visual(pos: Vector3) -> void:
+	var boom := Node3D.new()
+	add_child(boom)
+	boom.global_position = pos
+	var mi := MeshInstance3D.new()
+	var sm := SphereMesh.new()
+	sm.radius = 1.0
+	sm.height = 2.0
+	mi.mesh = sm
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(1.0, 0.55, 0.12, 0.9)
+	mat.emission_enabled = true
+	mat.emission = Color(1.0, 0.5, 0.1)
+	mat.emission_energy_multiplier = 4.0
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mi.material_override = mat
+	boom.add_child(mi)
+	var light := OmniLight3D.new()
+	light.light_color = Color(1.0, 0.55, 0.15)
+	light.omni_range = 18.0
+	light.light_energy = 6.0
+	boom.add_child(light)
+	var tw := boom.create_tween().set_parallel(true)
+	tw.tween_property(boom, "scale", Vector3.ONE * 6.5, 0.45).from(Vector3.ONE * 0.4)
+	tw.tween_property(mat, "albedo_color:a", 0.0, 0.45)
+	tw.tween_property(light, "light_energy", 0.0, 0.45)
+	tw.chain().tween_callback(boom.queue_free)
 
 func _drop_spikes(d: float, x: float, mine: bool) -> void:
 	var strip := Area3D.new()

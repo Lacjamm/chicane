@@ -20,6 +20,7 @@ func fresh() -> Dictionary:
 		"wins":{}, "cop_wins":{}, "secrets":{}, "station":"throttle",
 		"stats":{"races":0,"wins":0,"escapes":0,"busts":0,"takedowns":0,"best_speed":0,"best_drift":0,"bounty":0,"earned":0},
 		"flags":{}, "volume":1.0, "seen_intro":false,
+		"loadout":["missile", "gun", "bomb"],   # v9.4 — pick-3 weapons
 		# v4 — Velocity County open world (deterministic seed, discovery, barn finds, cameras)
 		"roam":{"seed":20260803, "disc":"", "barns":{}, "cams":{}, "flags":{}},
 	}
@@ -72,6 +73,18 @@ func racer_rank() -> int: return clampi(int(data.rep) / D.REP_PER_RANK + 1, 1, 1
 func cop_rank() -> int: return clampi(int(data.cop_rep) / D.COP_REP_PER_RANK + 1, 1, 10)
 
 func owns(id: String) -> bool: return data.cars.has(id)
+
+# Validated 3-weapon loadout: unknown/duplicate ids dropped, padded from defaults.
+func loadout() -> Array:
+	var out: Array = []
+	for wid in data.get("loadout", []):
+		if D.WEAPONS.has(wid) and not out.has(wid):
+			out.append(wid)
+	for wid in D.DEFAULT_LOADOUT:
+		if out.size() >= 3: break
+		if not out.has(wid):
+			out.append(wid)
+	return out.slice(0, 3)
 
 func car_cfg(id: String) -> Dictionary:
 	if data.cars.has(id): return data.cars[id]

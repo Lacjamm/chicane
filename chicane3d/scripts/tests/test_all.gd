@@ -25,6 +25,7 @@ func _ready() -> void:
 	_check_racing_line()
 	_check_world()
 	_check_skins()
+	_check_missiles()
 	_check_save()
 	print("== %d checks, %d failures ==" % [checks, fails])
 	print("SUITE ", "PASS" if fails == 0 else "FAIL")
@@ -169,14 +170,90 @@ func _check_skins() -> void:
 		var v := CarFactory.build_model_visual(pick, {"len":4.7,"wid":2.0,"nose":1.1,"tail":0.7,"wing":0.2})
 		var n_mesh := 0
 		var stack: Array = [v]
+		# wheel meshes are split out into hub-mounted wheelsets (meta) — count those too
+		if v.has_meta("wheelsets"):
+			for k in v.get_meta("wheelsets"):
+				stack.append(v.get_meta("wheelsets")[k].node)
 		while not stack.is_empty():
 			var nd: Node = stack.pop_back()
 			if nd is MeshInstance3D: n_mesh += 1
 			stack.append_array(nd.get_children())
 		ok(n_mesh > 5, "model visual builds: %s (%d meshes)" % [pick, n_mesh])
 		ok(v.has_meta("model_skin"), "model visual tagged for damage guards")
+		if v.has_meta("wheelsets"):
+			for k in v.get_meta("wheelsets"):
+				v.get_meta("wheelsets")[k].node.free()
 		v.free()
 	ok(str(S.g("trans_mode")) in ["auto", "manual"], "transmission setting migrated")
+
+func _check_missiles() -> void:
+	print("- weapons (unlimited) + respawn -")
+	var ms = load("res://scripts/missile.gd")
+	ok(ms != null, "missile script loads")
+	var m: Node3D = ms.new()
+	ok(m is Node3D, "missile instantiates")
+	m.free()
+	var rm := RaceManager.new()
+	ok(rm.RESPAWN_DELAY == 10.0, "blown-up cars respawn after 10s")
+	ok(rm.cd_missile == 0.0, "missile ready at race start")
+	rm.free()
+	# traffic can be blown up (method exists without needing a live race)
+	var tc := TrafficCar.new()
+	ok(tc.has_method("blow_up"), "traffic supports blow_up")
+	tc.free()
+	# v9.4 pick-3 loadout
+	for i in 3:
+		ok(InputMap.has_action("wpn%d" % (i + 1)), "weapon slot %d input registered" % (i + 1))
+	for wid in ["gun", "sword", "chainsaw", "ball", "bomb", "flame", "freeze", "missile", "emp", "shock"]:
+		ok(D.WEAPONS.has(wid), "weapon in roster: %s" % wid)
+	for wid in D.WEAPONS:
+		ok(D.WEAPONS[wid].has("name") and D.WEAPONS[wid].has("cd") and D.WEAPONS[wid].has("desc"),
+			"weapon def complete: %s" % wid)
+	for wid in D.DEFAULT_LOADOUT:
+		ok(D.WEAPONS.has(wid), "default loadout valid: %s" % wid)
+	ok(P.loadout().size() == 3, "loadout resolves to exactly 3 weapons")
+	var backup = P.data.get("loadout")
+	P.data.loadout = ["nonsense", "flame", "flame"]
+	var lo := P.loadout()
+	ok(lo.size() == 3 and "flame" in lo and not "nonsense" in lo, "loadout sanitises bad saves")
+	P.data.loadout = backup
+	var ws = load("res://scripts/weapons.gd")
+	ok(ws != null and ws.can_instantiate(), "weapons controller loads")
+	var wnode: Node = ws.new()
+	ok(wnode.has_method("fire_slot"), "weapons controller has fire_slot")
+	wnode.free()
+	# v9.5 — god mode, warp speed, radar
+	ok(InputMap.has_action("warp"), "warp input registered")
+	ok(S.DEFAULTS.has("god_mode") and S.DEFAULTS.god_mode == false, "god mode setting (default off)")
+	ok(S.DEFAULTS.has("radar") and S.DEFAULTS.radar == true, "radar setting (default on)")
+	ok(S.DEFAULTS.has("brightness"), "brightness setting exists")
+	var pc := PlayerCar.new()
+	ok(pc.has_method("start_warp"), "player supports warp speed")
+	pc.start_warp(10.0)
+	ok(pc.warp_t == 10.0, "warp lasts 10 seconds")
+	# v9.7 — health bar + RIP respawn
+	var rr := RaceManager.new()
+	ok(rr.RIP_RESPAWN == 5.0, "RIP respawn countdown is 5s")
+	rr.free()
+	var vb := VehicleBase.new()
+	ok(vb.has_method("rebuild_visual"), "vehicles can rebuild visuals on respawn")
+	vb.free()
+	# v9.6 — [Q] weapon inventory overlay
+	ok(InputMap.has_action("inv"), "inventory input registered ([Q])")
+	var hud_s = load("res://scripts/hud.gd")
+	ok(hud_s != null and hud_s.can_instantiate(), "hud loads")
+	var hh: Node = hud_s.new()
+	ok(hh.has_method("toggle_inventory"), "hud has weapon inventory overlay")
+	hh.free()
+	var god_was: bool = S.g("god_mode")
+	P.data.settings.god_mode = true
+	pc.hp = 100.0
+	pc.take_impact(Vector3.ZERO, Vector3.UP, 50.0, 1.0)
+	pc.stun(2.0)
+	pc.spike()
+	ok(pc.hp == 100.0 and pc.stun_t == 0.0 and pc.spike_t == 0.0, "god mode blocks damage/stun/spikes")
+	P.data.settings.god_mode = god_was
+	pc.free()
 
 func _check_save() -> void:
 	print("- save / migration -")

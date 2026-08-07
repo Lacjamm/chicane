@@ -25,6 +25,14 @@
     { "label": "Screenshot suite (xvfb)",
       "type": "shell",
       "command": "xvfb-run -a -s '-screen 0 1280x720x24' godot --path chicane3d --rendering-driver opengl3 scenes/tests/TestShot.tscn",
+      "problemMatcher": [] },
+    { "label": "Models: regenerate skins from Kenney kit",
+      "type": "shell",
+      "command": "godot --headless --path chicane3d --script ../tools/convert_car_models.gd",
+      "problemMatcher": [] },
+    { "label": "Models: screenshot grid of installed skins (xvfb)",
+      "type": "shell",
+      "command": "xvfb-run -a -s '-screen 0 1280x720x24' godot --path chicane3d --rendering-driver opengl3 scenes/tests/TestModelsShot.tscn",
       "problemMatcher": [] }
   ]
 }

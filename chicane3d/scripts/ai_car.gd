@@ -14,6 +14,7 @@ var race: Node = null
 var role: int = Role.RIVAL
 var cop_role := "chase"           # chase | ram | spike | intercept
 var skill := 1.0
+var paint_col := "8a99a8"         # remembered so a blown-up car can respawn identical
 var lane := 0.0                   # personal lane bias around the racing line
 var flank := 0.0                  # director-assigned box-in offset
 var track_idx := 0
@@ -50,6 +51,7 @@ func setup_ai(id: String, ai_role: int, ai_skill: float, paint := "8a99a8", poli
 	setup(id, s, paint, "gloss", police)
 	role = ai_role
 	skill = ai_skill
+	paint_col = paint
 	trans = Transmission.new()
 	trans.setup(str(def.get("cls", "Supercar")), s)
 	body_entered.connect(_on_body_entered)

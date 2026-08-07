@@ -4,6 +4,8 @@
 # ============================================================
 extends Node
 
+const VERSION := "v9.7"
+
 const DIFFICULTY := {
 	"easy":   {"label":"Cruise",  "ai":0.86, "cop":0.90, "aggro":0.7, "cash":1.25, "dmg":0.55, "desc":"Forgiving racing, big rewards. Great for younger drivers."},
 	"normal": {"label":"Redline", "ai":1.00, "cop":1.00, "aggro":1.0, "cash":1.0,  "dmg":1.0,  "desc":"The intended Full Throttle experience."},
@@ -91,6 +93,23 @@ const ZONES := {
 	"docks":    {"name":"Industrial Docks",     "tag":"PURSUIT ALLEY",      "sky_top":Color(0.04,0.06,0.07),"sky_hor":Color(0.22,0.31,0.36),"sun":Color(1.0,0.68,0.37),"sun_energy":0.5,"ambient":0.35,"fog":Color(0.12,0.18,0.21),"fog_density":0.006,"ground":Color(0.13,0.16,0.17),"scenery":"docks","night":true,"wet":true},
 	"blacktrack":{"name":"The Black Track",     "tag":"CLASSIFIED",         "sky_top":Color(0.0,0.0,0.0),"sky_hor":Color(0.15,0.01,0.05),"sun":Color(1.0,0.0,0.2),"sun_energy":0.4,"ambient":0.22,"fog":Color(0.08,0.0,0.03),"fog_density":0.008,"ground":Color(0.03,0.03,0.04),"scenery":"blacktrack","night":true,"wet":false},
 }
+
+# v9.4 — pick-3 weapon loadout. Every weapon has unlimited ammo and is
+# gated only by its cooldown; "hold" weapons fire continuously while the
+# slot key is held. "dur" weapons stay active that many seconds per use.
+const WEAPONS := {
+	"missile":  {"name":"Homing Missile", "cd":0.9,  "hold":false, "desc":"Locks the car ahead and blows it up."},
+	"gun":      {"name":"Machine Guns",   "cd":0.12, "hold":true,  "desc":"Hold to shred the car ahead with tracer fire."},
+	"sword":    {"name":"Blade Wings",    "cd":9.0,  "hold":false, "dur":6.0, "desc":"Side blades — anything you graze is destroyed."},
+	"chainsaw": {"name":"Chainsaw Ram",   "cd":9.0,  "hold":false, "dur":6.0, "desc":"Front saw — anything you ram is sliced apart."},
+	"ball":     {"name":"Wrecking Ball",  "cd":13.0, "hold":false, "dur":8.0, "desc":"A ball on a chain orbits your car, wrecking whatever it touches."},
+	"bomb":     {"name":"Bombs",          "cd":1.1,  "hold":false, "desc":"Drops a bomb behind you — detonates on contact or fuse."},
+	"flame":    {"name":"Flamethrower",   "cd":0.1,  "hold":true,  "desc":"Hold to torch everything in a cone ahead."},
+	"freeze":   {"name":"Freeze Ray",     "cd":5.0,  "hold":false, "desc":"Flash-freezes the car ahead solid for 4 seconds."},
+	"emp":      {"name":"EMP Burst",      "cd":6.0,  "hold":false, "desc":"Shorts out the nearest car's systems."},
+	"shock":    {"name":"Shockwave",      "cd":7.0,  "hold":false, "desc":"Radial blast that hurls every nearby car away."},
+}
+const DEFAULT_LOADOUT := ["missile", "gun", "bomb"]
 
 # v5 — imported 3D model skins (user-supplied GLTF models in assets/models/).
 # All are bodywork variants of the Aegir megacar line; "proc" = procedural body.
@@ -239,7 +258,10 @@ func _setup_input() -> void:
 		"accel":[KEY_W, KEY_UP], "brake":[KEY_S, KEY_DOWN],
 		"left":[KEY_A, KEY_LEFT], "right":[KEY_D, KEY_RIGHT],
 		"handbrake":[KEY_SPACE], "nitro":[KEY_SHIFT, KEY_N],
-		"emp":[KEY_E], "spike":[KEY_Q], "turbo":[KEY_T], "block":[KEY_R],
+		"emp":[KEY_E], "spike":[KEY_K], "turbo":[KEY_T], "block":[KEY_R],
+		"wpn1":[KEY_F], "wpn2":[KEY_G], "wpn3":[KEY_H],
+		"warp":[KEY_Z],
+		"inv":[KEY_Q],   # weapon inventory overlay
 		"camera":[KEY_C], "reset":[KEY_X], "radio":[KEY_M], "pause":[KEY_ESCAPE, KEY_P],
 		"gear_up":[KEY_B], "gear_down":[KEY_V],
 		"lookback":[KEY_TAB],
@@ -267,9 +289,13 @@ func _setup_input() -> void:
 		"handbrake": JOY_BUTTON_X,       # square / X
 		"nitro": JOY_BUTTON_A,           # cross / A
 		"turbo": JOY_BUTTON_B,
-		"emp": JOY_BUTTON_Y,
+		# EMP lives in the weapon roster now — equip it to fire it from a pad
 		"spike": JOY_BUTTON_LEFT_SHOULDER,
 		"block": JOY_BUTTON_RIGHT_SHOULDER,
+		"wpn1": JOY_BUTTON_LEFT_STICK,
+		"wpn2": JOY_BUTTON_Y,
+		"wpn3": JOY_BUTTON_RIGHT_SHOULDER,
+		"warp": JOY_BUTTON_DPAD_LEFT,
 		"camera": JOY_BUTTON_BACK,
 		"reset": JOY_BUTTON_DPAD_UP,
 		"radio": JOY_BUTTON_DPAD_RIGHT,
