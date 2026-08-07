@@ -46,6 +46,8 @@ var impound_t := 0.0
 # easy-mode panic button: [Y] nukes every police unit
 var cd_nuke := 0.0
 var nukes_fired := 0
+# easy-mode [G] god toggle: while on, whatever touches the player explodes
+var god_kills := 0
 var drift_score := 0
 var drift_combo := 1.0
 var best_speed := 0.0
@@ -248,6 +250,8 @@ func start(event: Dictionary, in_career: String) -> void:
 	add_child(hud)
 	hud.bind(self)
 	toast("Hit [Q] to bring up your weapon inventory", "")
+	if P.data.diff == "easy" and career != "cop":
+		hud.flash_hint("PRESS [G] FOR GOD MODE", 6.0)
 	SFX.set_station(P.data.station)
 	if mode == "roam":
 		roam = load("res://scripts/roam.gd").new()
@@ -265,37 +269,38 @@ func _environment() -> void:
 	var env := Environment.new()
 	var sky := Sky.new()
 	var sm := ProceduralSkyMaterial.new()
-	sm.sky_top_color = zone.sky_top
-	sm.sky_horizon_color = zone.sky_hor
-	sm.ground_bottom_color = zone.ground * 0.4
-	sm.ground_horizon_color = zone.sky_hor * 0.6
+	# lift zone skies toward clean daylight tones (keeps each zone's hue)
+	sm.sky_top_color = zone.sky_top.lerp(Color(0.45, 0.55, 0.72), 0.3)
+	sm.sky_horizon_color = zone.sky_hor.lerp(Color(0.75, 0.8, 0.88), 0.3)
+	sm.ground_bottom_color = zone.ground * 0.55
+	sm.ground_horizon_color = (zone.sky_hor * 0.6).lerp(Color(0.6, 0.65, 0.7), 0.3)
 	sm.sun_angle_max = 25.0
 	sm.sun_curve = 0.12          # visible sun disc with soft falloff
 	sky.sky_material = sm
 	env.background_mode = Environment.BG_SKY
 	env.sky = sky
 	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
-	# v9.8: second global brightness lift (v9.4's wasn't enough) — much
-	# higher ambient floor so night zones stay readable, hotter exposure.
-	# The Settings → Video Brightness slider stacks on top.
+	# v9.11: third pass — lighter and CLEARER. Higher ambient floor and
+	# exposure again, plus the sky itself is lifted toward daylight tones
+	# so colours read clean instead of murky. Brightness slider stacks.
 	var bright: float = clampf(float(S.g("brightness")), 0.6, 1.6)
-	env.ambient_light_energy = clampf(zone.ambient * 2.3 + 0.42, 0.7, 2.6) * bright
+	env.ambient_light_energy = clampf(zone.ambient * 2.6 + 0.55, 0.85, 2.8) * bright
 	env.tonemap_mode = Environment.TONE_MAPPER_ACES
-	env.tonemap_exposure = 1.38 * bright
+	env.tonemap_exposure = 1.5 * bright
 	env.glow_enabled = S.glow_enabled()
 	env.glow_intensity = 0.3
 	env.glow_bloom = 0.03
 	env.ssao_enabled = S.ssao_enabled()
 	get_viewport().msaa_3d = [Viewport.MSAA_DISABLED, Viewport.MSAA_2X, Viewport.MSAA_4X][S.msaa()] as Viewport.MSAA
 	env.fog_enabled = true
-	env.fog_light_color = zone.fog
-	env.fog_density = zone.fog_density * 0.35
+	env.fog_light_color = zone.fog.lerp(Color(0.7, 0.75, 0.8), 0.3)
+	env.fog_density = zone.fog_density * 0.15   # v9.11: much clearer air
 	world_env = WorldEnvironment.new()
 	world_env.environment = env
 	add_child(world_env)
 	sun = DirectionalLight3D.new()
-	sun.light_color = zone.sun
-	sun.light_energy = zone.sun_energy * 1.7 + 0.3
+	sun.light_color = zone.sun.lerp(Color(1.0, 0.97, 0.9), 0.25)
+	sun.light_energy = zone.sun_energy * 1.9 + 0.4
 	sun.shadow_enabled = S.shadows_enabled()
 	sun.rotation_degrees = Vector3(-18.0 if zone.night else -38.0, 40, 0)
 	add_child(sun)
@@ -443,6 +448,22 @@ func _on_player_impact(severity: float, world_pos: Vector3, other: Node) -> void
 	if other is StaticBody3D and other.has_meta("chevron"):
 		smash_chevron(other)          # breakable — bounty, zero damage
 		return
+	# god mode: anything that touches the player explodes
+	if bool(S.g("god_mode")):
+		if other is AICar and not other.wrecked:
+			destroy_vehicle(other, world_pos)
+			_blast_visual(world_pos)
+			god_kills += 1
+			return
+		elif other is TrafficCar and not other.hit_free:
+			destroy_vehicle(other, world_pos)
+			_blast_visual(world_pos)
+			god_kills += 1
+			return
+		elif other is StaticBody3D and other.has_meta("destructible") and destructibles:
+			destructibles.destroy(other, player.global_position)
+			god_kills += 1
+			return
 	var dir := (player.global_position - world_pos).normalized()
 	if dir.length() < 0.5: dir = global_transform.basis.z
 	var dmg_scale: float = P.diff().dmg
@@ -544,6 +565,7 @@ func _weapons_input(delta: float) -> void:
 	if Input.is_action_just_pressed("inv") and hud:
 		hud.toggle_inventory()
 	if Input.is_action_just_pressed("nuke"): _fire_nuke()
+	if Input.is_action_just_pressed("god"): _toggle_god()
 	if not player.controls_enabled: return
 	if Input.is_action_just_pressed("warp") and cd_warp <= 0.0:
 		cd_warp = 25.0 * float(P.diff().get("wpncd", 1.0))
@@ -637,6 +659,24 @@ func _fire_nuke() -> void:
 	hud.big_message("NUKED THE POLICE!")
 	toast("POLICE NUKED — %d unit%s vaporised!" % [n, "" if n == 1 else "s"], "good")
 	if player.chase: player.chase.shake(12.0)
+
+# ============ GOD MODE TOGGLE (easy mode, [G]) ============
+func _toggle_god() -> void:
+	if P.data.diff != "easy":
+		toast("GOD MODE hotkey is EASY-level only (see Settings)", "warn")
+		return
+	var on: bool = not bool(S.g("god_mode"))
+	S.set_s("god_mode", on)
+	if on:
+		# straight path to the finish: back to the middle of the road,
+		# facing the right way — then nothing can touch you
+		player.reset_to_track()
+		hud.big_message("GOD MODE ON")
+		toast("Untouchable — anything that touches you EXPLODES", "good")
+		SFX.play("emp", -4.0)
+	else:
+		hud.big_message("GOD MODE OFF")
+		toast("Back to mortal driving", "warn")
 
 # ============ MISSILES (unlimited) ============
 func _fire_missile() -> void:

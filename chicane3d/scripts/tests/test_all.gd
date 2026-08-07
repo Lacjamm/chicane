@@ -248,7 +248,13 @@ func _check_missiles() -> void:
 	ok(rn.IMPOUND_WARNING == 180.0, "impound warning lasts 3 minutes")
 	ok(rn.has_method("_fire_nuke") and rn.has_method("_trigger_impound_warning"),
 		"impound warning + police nuke implemented")
+	# v9.11 — easy-mode [G] god toggle + explosive touch
+	ok(InputMap.has_action("god"), "god mode hotkey registered ([G], easy only)")
+	ok(rn.has_method("_toggle_god"), "god mode toggle implemented")
 	rn.free()
+	var hud2: Node = load("res://scripts/hud.gd").new()
+	ok(hud2.has_method("flash_hint"), "hud can flash hotkey hints")
+	hud2.free()
 	# v9.7 — health bar + RIP respawn
 	var rr := RaceManager.new()
 	ok(rr.RIP_RESPAWN == 5.0, "RIP respawn countdown is 5s")

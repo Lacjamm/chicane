@@ -133,7 +133,7 @@ func show_title() -> void:
 	v.add_child(_btn("START ENGINE", func():
 		if P.data.flags.has("diff_chosen"): show_menu()
 		else: show_difficulty(), true))
-	var hint := _lbl("WASD/arrows drive · SPACE handbrake · SHIFT nitrous · F/G/H weapons · Q inventory · Z warp · E EMP · T turbo\nC camera · X reset car · M radio · ESC pause", 13, GREY)
+	var hint := _lbl("WASD/arrows drive · SPACE handbrake · SHIFT nitrous · 1/2/3 weapons · Q inventory · Z warp · G god mode (EASY) · E EMP · T turbo\nC camera · X reset car · M radio · ESC pause", 13, GREY)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(hint)
 
@@ -279,7 +279,7 @@ func show_cop() -> void:
 				show_cop(), P.data.cop_cur == c.id, locked)
 		carrow.add_child(b)
 	v.add_child(carrow)
-	v.add_child(_lbl("Weapons: [F]/[G]/[H] your loadout · [Q] inventory · [E] EMP · [K] spike strip · [R] roadblock · [T] turbo · SHIFT nitrous. Ram the suspect to 0%%.", 14, GREY))
+	v.add_child(_lbl("Weapons: [1]/[2]/[3] your loadout · [Q] inventory · [E] EMP · [K] spike strip · [R] roadblock · [T] turbo · SHIFT nitrous. Ram the suspect to 0%%.", 14, GREY))
 	for i in D.COP_EVENTS.size():
 		var m: Dictionary = D.COP_EVENTS[i]
 		var open := P.cop_mission_unlocked(i)
@@ -375,12 +375,12 @@ func show_weapons() -> void:
 	head.add_child(_btn("< Back", show_menu.bind()))
 	head.add_child(_lbl("  WEAPON LOADOUT", 28, PINK))
 	v.add_child(head)
-	v.add_child(_lbl("Choose 3 weapons for your slot keys [F] [G] [H]  (pad: LS-click / Y / RB). Unlimited ammo on everything. In a race, hit [Q] for your inventory.", 14, GREY))
+	v.add_child(_lbl("Choose 3 weapons for your slot keys [1] [2] [3]  (F/H also work; pad: LS-click / Y / RB). Unlimited ammo on everything. In a race, hit [Q] for your inventory.", 14, GREY))
 	var lo := P.loadout()
 	for wid in D.WEAPONS:
 		var wd: Dictionary = D.WEAPONS[wid]
 		var slot := lo.find(wid)
-		var tag := "  —  SLOT %d [%s]" % [slot + 1, ["F", "G", "H"][slot]] if slot >= 0 else ""
+		var tag := "  —  SLOT %d [%s]" % [slot + 1, ["1", "2", "3"][slot]] if slot >= 0 else ""
 		var b := _btn("%s%s\n%s" % [wd.name, tag, wd.desc], _toggle_weapon.bind(wid), slot >= 0)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		if slot >= 0: b.modulate = Color(0.75, 1.0, 0.78)
@@ -763,7 +763,7 @@ func show_settings() -> void:
 			show_settings(), P.data.station == r.id))
 	v.add_child(rrow)
 	v.add_child(HSeparator.new())
-	v.add_child(_lbl("Keyboard: WASD/arrows · SPACE handbrake · SHIFT nitrous · F/G/H weapon slots · Q inventory · Z warp · Y nuke police (EASY) · E EMP · K spikes · R roadblock · T turbo · C camera · X reset · M radio · ESC pause", 12, GREY))
+	v.add_child(_lbl("Keyboard: WASD/arrows · SPACE handbrake · SHIFT nitrous · 1/2/3 weapon slots (F/H too) · Q inventory · Z warp · G god mode (EASY) · Y nuke police (EASY) · E EMP · K spikes · R roadblock · T turbo · C camera · X reset · M radio · ESC pause", 12, GREY))
 	v.add_child(_lbl("Controller: RT throttle · LT brake · Left stick steer · X handbrake · A nitrous · LS-click/Y/RB weapon slots · D-pad left warp · B turbo · LB spikes · Back camera · D-pad up reset · Start pause", 12, GREY))
 	v.add_child(_btn("RESET ALL PROGRESS", _confirm_reset.bind()))
 	_focus_first()

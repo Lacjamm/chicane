@@ -10,6 +10,9 @@ var _warped := false
 var _demolished := false
 var _impounded := false
 var _nuked_cops := false
+var _god_on := false
+var _god_off := false
+var _diff_was := "normal"
 
 func _ready() -> void:
 	print("TEST: boot ok — profile cash=", P.data.cash, " diff=", P.data.diff)
@@ -107,6 +110,20 @@ func _bot(_delta: float) -> void:
 		print("TEST nuke: fired=", race.nukes_fired, " cops_alive_after=", alive,
 			" impound_cleared=", race.impound_t == 0.0)
 		results.append("nuke_ok" if race.nukes_fired > 0 and race.impound_t == 0.0 else "nuke_fail")
+	# god mode toggle: flip it on (easy-only path), let the bot ram things
+	# for a while with explosive touch, then flip it back off
+	if phase == 0 and not _god_on and timer > 32.0:
+		_god_on = true
+		_diff_was = P.data.diff
+		P.data.diff = "easy"
+		race._toggle_god()
+		print("TEST god mode on: ", S.g("god_mode"))
+	if phase == 0 and _god_on and not _god_off and timer > 44.0:
+		_god_off = true
+		race._toggle_god()
+		P.data.diff = _diff_was
+		print("TEST god mode off: ", S.g("god_mode"), " god_kills=", race.god_kills)
+		results.append("god_ok" if not S.g("god_mode") else "god_stuck")
 	# destructibles: level one building of each reachable type deterministically
 	if phase == 0 and not _demolished and timer > 20.0 and race.destructibles \
 			and race.destructibles.buildings.size() > 1:
@@ -234,6 +251,7 @@ func _wrap_up() -> void:
 	print("TEST SUMMARY: ", results)
 	var pass_ok: bool = results.size() >= 5 and not results.has("timeout_harness") \
 		and not results.has("roam_fail") and not results.has("missile_none") \
-		and not results.has("buildings_none") and not results.has("nuke_fail")
+		and not results.has("buildings_none") and not results.has("nuke_fail") \
+		and not results.has("god_stuck")
 	print("TEST ", "PASS" if pass_ok else "PARTIAL")
 	get_tree().quit(0 if pass_ok else 1)

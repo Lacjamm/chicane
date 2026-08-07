@@ -1,6 +1,24 @@
 # CHANGELOG — Chicane: Full Throttle 3D
 
-## v9.10 (this build)
+## v9.11 (this build)
+**[G] GOD MODE hotkey (EASY level):** every race on EASY starts with a
+flashing "PRESS [G] FOR GOD MODE" hint. Press it and: your car snaps
+back to the middle of the road on the straight path to the finish, you
+become untouchable, and ANYTHING that touches you — rivals, cops,
+traffic, even buildings — explodes on contact. Press [G] again to turn
+it off. (Same god-mode setting as Settings → Gameplay, now with a
+live toggle.)
+
+**Weapon slots moved to [1]/[2]/[3]** (F and H still work for slots
+1/3) — this frees G for god mode. All menus, HUD and the inventory
+overlay show the new keys.
+
+**Lighter + clearer colours (third pass):** skies lifted toward clean
+daylight tones per zone, fog cut to ~40% of before, warmer stronger
+sun, higher ambient floor and exposure. Districts keep their identity
+but everything reads bright and clear.
+
+## v9.10
 **Impound warning (3 minutes):** the first time the VCPD pins you down,
 you are no longer busted on the spot. Instead: "IMPOUND WARNING!", a
 flashing 3:00 countdown on the HUD, and one chance — lose the police

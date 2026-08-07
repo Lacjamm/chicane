@@ -4,7 +4,7 @@
 # ============================================================
 extends Node
 
-const VERSION := "v9.10"
+const VERSION := "v9.11"
 
 # v9.9 — three levels of play. Beyond AI skill/payouts, difficulty now
 # shapes the arcade systems: weapon cooldowns (wpncd), your death
@@ -269,10 +269,11 @@ func _setup_input() -> void:
 		"left":[KEY_A, KEY_LEFT], "right":[KEY_D, KEY_RIGHT],
 		"handbrake":[KEY_SPACE], "nitro":[KEY_SHIFT, KEY_N],
 		"emp":[KEY_E], "spike":[KEY_K], "turbo":[KEY_T], "block":[KEY_R],
-		"wpn1":[KEY_F], "wpn2":[KEY_G], "wpn3":[KEY_H],
+		"wpn1":[KEY_1, KEY_F], "wpn2":[KEY_2], "wpn3":[KEY_3, KEY_H],
 		"warp":[KEY_Z],
 		"inv":[KEY_Q],   # weapon inventory overlay
 		"nuke":[KEY_Y],  # easy mode: nuke the police
+		"god":[KEY_G],   # easy mode: toggle god mode in-race
 		"camera":[KEY_C], "reset":[KEY_X], "radio":[KEY_M], "pause":[KEY_ESCAPE, KEY_P],
 		"gear_up":[KEY_B], "gear_down":[KEY_V],
 		"lookback":[KEY_TAB],

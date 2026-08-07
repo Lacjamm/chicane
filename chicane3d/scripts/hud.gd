@@ -318,7 +318,7 @@ func _process(_delta: float) -> void:
 	var k_turbo := "B" if pad else "T"
 	var k_spike := "LB" if pad else "K"
 	var k_block := "RB" if pad else "R"
-	var slot_keys := ["LS", "Y", "RB"] if pad else ["F", "G", "H"]
+	var slot_keys := ["LS", "Y", "RB"] if pad else ["1", "2", "3"]
 	var w := []
 	if race.weapons:
 		for i in race.weapons.slots.size():
@@ -359,6 +359,9 @@ func _process(_delta: float) -> void:
 	if radar_ctl.visible: radar_ctl.queue_redraw()
 	if inv_panel and inv_panel.visible:
 		_update_inventory()
+	if hint_lbl:
+		_hint_t -= _delta
+		hint_lbl.visible = _hint_t > 0.0 and int(race.t * 3.0) % 2 == 0
 	if flash_rect.color.a > 0.0:
 		flash_rect.color.a = maxf(flash_rect.color.a - _delta * 3.0, 0.0)
 
@@ -583,7 +586,7 @@ func _build_inventory() -> void:
 
 func _update_inventory() -> void:
 	var pad: bool = S.last_device_pad
-	var keys := ["LS", "Y", "RB"] if pad else ["F", "G", "H"]
+	var keys := ["LS", "Y", "RB"] if pad else ["1", "2", "3"]
 	var lines := []
 	if race.weapons:
 		for i in race.weapons.slots.size():
@@ -618,6 +621,20 @@ func big_message(txt: String) -> void:
 	big_lbl.text = txt
 	big_lbl.visible = true
 	get_tree().create_timer(2.4, true, false, true).timeout.connect(func(): big_lbl.visible = false)
+
+# v9.11 — flashing hotkey hint at race start (e.g. "PRESS [G] FOR GOD MODE")
+var hint_lbl: Label = null
+var _hint_t := 0.0
+
+func flash_hint(txt: String, dur := 5.0) -> void:
+	if hint_lbl == null:
+		hint_lbl = _mk_label(30, GOOD)
+		hint_lbl.set_anchors_preset(Control.PRESET_CENTER_TOP)
+		hint_lbl.offset_left = -350; hint_lbl.offset_right = 350; hint_lbl.offset_top = 230
+		hint_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		add_child(hint_lbl)
+	hint_lbl.text = txt
+	_hint_t = dur
 
 # v9.7 — "RESPAWN IN n" countdown after a RIP (count_lbl is sized for huge
 # single digits, so shrink the font while it holds the longer message)

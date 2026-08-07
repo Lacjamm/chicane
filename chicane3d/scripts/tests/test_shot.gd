@@ -22,13 +22,18 @@ func _run() -> void:
 	await _snap("difficulty")
 	menus.queue_free()
 	await _wait(0.3)
-	# neon race
+	# neon race (easy mode so the [G] god-mode hint flashes at the start)
+	var diff_was: String = P.data.diff
+	P.data.diff = "easy"
 	race = RaceManager.new()
 	add_child(race)
 	race.start(D.RACER_EVENTS[0], "racer")
 	Input.action_press("accel")
-	await _wait(11.0)
+	await _wait(2.15)   # hint blinks at 3 Hz — land inside a visible phase
+	await _snap("god_hint")
+	await _wait(8.85)
 	await _snap("race_neon")
+	P.data.diff = diff_was
 	race.hud.toggle_inventory()
 	await _wait(0.3)
 	await _snap("inventory")
