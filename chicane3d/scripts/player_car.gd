@@ -19,6 +19,10 @@ var overheated := false
 var nitro_on := false
 var turbo_t := 0.0
 var warp_t := 0.0               # v9.5 — warp speed remaining (3x velocity)
+# v9.12 — SPACE jump / mid-air double jump
+var _jumps := 0                 # jumps used since last grounded
+var _jump_grace := 0.0          # keeps _jumps from resetting the same frame
+var jumps_done := 0
 var drifting := false
 var drift_time := 0.0
 var controls_enabled := true
@@ -129,6 +133,27 @@ func _drive(delta: float) -> void:
 	var steer_in := Input.get_action_strength("left") - Input.get_action_strength("right")
 	steer_in *= float(S.g("steer_sens"))
 	var hb := Input.is_action_pressed("handbrake")
+
+	# --- jump / double jump (SPACE) ---
+	_jump_grace = maxf(_jump_grace - delta, 0.0)
+	if _grounded() and _jump_grace <= 0.0:
+		_jumps = 0
+	if Input.is_action_just_pressed("jump"):
+		if _grounded():
+			_jumps = 1
+			_jump_grace = 0.3
+			jumps_done += 1
+			linear_velocity.y = maxf(linear_velocity.y, 0.0)
+			apply_central_impulse(Vector3.UP * mass * 7.5)
+			SFX.play("blowoff", -10.0)
+		elif _jumps == 1:
+			_jumps = 2
+			jumps_done += 1
+			linear_velocity.y = maxf(linear_velocity.y, 0.0)   # crisp second kick
+			apply_central_impulse(Vector3.UP * mass * 8.5)
+			# nose up a touch so double jumps feel like a launch
+			apply_torque_impulse(global_transform.basis.x * mass * 1.2)
+			SFX.play("blowoff", -5.0)
 
 	# --- nitrous ---
 	var want_nitro := Input.is_action_pressed("nitro") and nitro > 0.02 and not overheated

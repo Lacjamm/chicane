@@ -13,9 +13,23 @@ var _nuked_cops := false
 var _god_on := false
 var _god_off := false
 var _diff_was := "normal"
+var _jump1 := false
+var _jump1r := false
+var _jump2 := false
+var _jump2r := false
+var _jump_checked := false
+
+var _user_loadout: Array = []
+var _user_diff := "normal"
 
 func _ready() -> void:
 	print("TEST: boot ok — profile cash=", P.data.cash, " diff=", P.data.diff)
+	# the harness assumes slot 1 = missile and Normal rules; real profiles
+	# customise both, so pin them for the run and restore at wrap-up
+	_user_loadout = P.loadout()
+	_user_diff = str(P.data.diff)
+	P.data.loadout = ["missile", "gun", "bomb"]
+	P.data.diff = "normal"
 	_start_phase()
 
 func _start_phase() -> void:
@@ -124,6 +138,24 @@ func _bot(_delta: float) -> void:
 		P.data.diff = _diff_was
 		print("TEST god mode off: ", S.g("god_mode"), " god_kills=", race.god_kills)
 		results.append("god_ok" if not S.g("god_mode") else "god_stuck")
+	# jump + double jump: press SPACE grounded, press again mid-air
+	if phase == 0:
+		if not _jump1 and timer > 52.0 and p._grounded():
+			_jump1 = true
+			Input.action_press("jump")
+		elif _jump1 and not _jump1r and timer > 52.05:
+			_jump1r = true
+			Input.action_release("jump")
+		elif _jump1r and not _jump2 and timer > 52.3:
+			_jump2 = true
+			Input.action_press("jump")
+		elif _jump2 and not _jump2r and timer > 52.35:
+			_jump2r = true
+			Input.action_release("jump")
+		elif _jump2r and not _jump_checked and timer > 53.2:
+			_jump_checked = true
+			print("TEST jumps: done=", p.jumps_done, " (expected 2: ground + double)")
+			results.append("jump_ok" if p.jumps_done >= 2 else "jump_fail")
 	# destructibles: level one building of each reachable type deterministically
 	if phase == 0 and not _demolished and timer > 20.0 and race.destructibles \
 			and race.destructibles.buildings.size() > 1:
@@ -235,10 +267,14 @@ func _roam_test() -> void:
 		call_deferred("_start_phase")
 
 func _release_all() -> void:
-	for a in ["accel", "brake", "left", "right", "nitro", "handbrake"]:
+	for a in ["accel", "brake", "left", "right", "nitro", "handbrake", "jump"]:
 		Input.action_release(a)
 
 func _wrap_up() -> void:
+	# hand the profile back the player's own loadout + difficulty
+	P.data.loadout = _user_loadout
+	P.data.diff = _user_diff
+	P.save_game()
 	# non-race sanity checks
 	P.data.cash = 999999
 	P.give_car("saber")
@@ -252,6 +288,6 @@ func _wrap_up() -> void:
 	var pass_ok: bool = results.size() >= 5 and not results.has("timeout_harness") \
 		and not results.has("roam_fail") and not results.has("missile_none") \
 		and not results.has("buildings_none") and not results.has("nuke_fail") \
-		and not results.has("god_stuck")
+		and not results.has("god_stuck") and not results.has("jump_fail")
 	print("TEST ", "PASS" if pass_ok else "PARTIAL")
 	get_tree().quit(0 if pass_ok else 1)

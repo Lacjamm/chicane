@@ -23,7 +23,8 @@
   GPU (the target) performance is fine. Traffic/AI never load model skins
   unless the car id itself has them.
 - Controller buttons are saturated: weapon slot 3 shares RB with the cop
-  roadblock, and warp shares D-pad left with manual gear-up. Keyboard has
-  no conflicts ([F]/[G]/[H] weapons, [Q] inventory, [Z] warp, [K] spikes).
+  roadblock, warp shares D-pad left with manual gear-up, and jump shares
+  LB with cop spikes. Keyboard has no conflicts ([1]/[2]/[3] weapons,
+  [Q] inventory, [Z] warp, [K] spikes, SPACE jump, CTRL handbrake).
 - The [Q] inventory overlay is read-only in-race; loadout changes happen
   in Main Menu → WEAPONS (deliberate — no mouse dependency mid-race).

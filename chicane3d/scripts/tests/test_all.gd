@@ -242,6 +242,12 @@ func _check_missiles() -> void:
 	for bt in ["tower", "block", "tank", "sign"]:
 		ok(Destructibles.TYPES.has(bt) and Destructibles.TYPES[bt].has("hp")
 			and Destructibles.TYPES[bt].has("label"), "building type complete: %s" % bt)
+	# v9.12 — SPACE jump / double jump (handbrake moved to CTRL)
+	ok(InputMap.has_action("jump"), "jump input registered (SPACE)")
+	ok(InputMap.has_action("handbrake"), "handbrake still bound (CTRL)")
+	var pj := PlayerCar.new()
+	ok("jumps_done" in pj, "player tracks jumps")
+	pj.free()
 	# v9.10 — impound warning + easy-mode nuke
 	ok(InputMap.has_action("nuke"), "nuke input registered ([Y], easy only)")
 	var rn := RaceManager.new()

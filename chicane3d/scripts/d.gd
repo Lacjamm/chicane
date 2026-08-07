@@ -4,7 +4,7 @@
 # ============================================================
 extends Node
 
-const VERSION := "v9.11"
+const VERSION := "v9.12"
 
 # v9.9 — three levels of play. Beyond AI skill/payouts, difficulty now
 # shapes the arcade systems: weapon cooldowns (wpncd), your death
@@ -270,7 +270,8 @@ func _setup_input() -> void:
 	var keys := {
 		"accel":[KEY_W, KEY_UP], "brake":[KEY_S, KEY_DOWN],
 		"left":[KEY_A, KEY_LEFT], "right":[KEY_D, KEY_RIGHT],
-		"handbrake":[KEY_SPACE], "nitro":[KEY_SHIFT, KEY_N],
+		"handbrake":[KEY_CTRL], "nitro":[KEY_SHIFT, KEY_N],
+		"jump":[KEY_SPACE],   # tap to jump, tap again mid-air to double jump
 		"emp":[KEY_E], "spike":[KEY_K], "turbo":[KEY_T], "block":[KEY_R],
 		"wpn1":[KEY_1, KEY_F], "wpn2":[KEY_2], "wpn3":[KEY_3, KEY_H],
 		"warp":[KEY_Z],
@@ -311,6 +312,7 @@ func _setup_input() -> void:
 		"wpn2": JOY_BUTTON_Y,
 		"wpn3": JOY_BUTTON_RIGHT_SHOULDER,
 		"warp": JOY_BUTTON_DPAD_LEFT,
+		"jump": JOY_BUTTON_LEFT_SHOULDER,
 		"camera": JOY_BUTTON_BACK,
 		"reset": JOY_BUTTON_DPAD_UP,
 		"radio": JOY_BUTTON_DPAD_RIGHT,

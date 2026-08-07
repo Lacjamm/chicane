@@ -133,7 +133,7 @@ func show_title() -> void:
 	v.add_child(_btn("START ENGINE", func():
 		if P.data.flags.has("diff_chosen"): show_menu()
 		else: show_difficulty(), true))
-	var hint := _lbl("WASD/arrows drive · SPACE handbrake · SHIFT nitrous · 1/2/3 weapons · Q inventory · Z warp · G god mode (EASY) · E EMP · T turbo\nC camera · X reset car · M radio · ESC pause", 13, GREY)
+	var hint := _lbl("WASD/arrows drive · SPACE jump (tap ×2 = double) · CTRL handbrake · SHIFT nitrous · 1/2/3 weapons · Q inventory · Z warp · G god mode (EASY) · E EMP · T turbo\nC camera · X reset car · M radio · ESC pause", 13, GREY)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	v.add_child(hint)
 
@@ -232,7 +232,7 @@ func show_prerace(e: Dictionary) -> void:
 		"sprint": "Finish 1st against %d rivals." % int(e.get("rivals", 0)),
 		"circuit": "%d laps — finish 1st." % int(e.get("laps", 1)),
 		"drag": "Beat your rival to the line. Manage nitrous heat perfectly.",
-		"drift": "Score %d drift points before the route ends. SPACE + steer to slide." % int(e.get("target", 0)),
+		"drift": "Score %d drift points before the route ends. CTRL + steer to slide." % int(e.get("target", 0)),
 		"topspeed": "Hit %d km/h before the route ends. Nitrous is your friend." % int(e.get("target", 0)),
 		"elim": "Last place is eliminated every 20 seconds. Survive.",
 		"escape": "Fill the ESCAPE bar by losing the police. Don't get busted or wrecked.",
@@ -763,7 +763,7 @@ func show_settings() -> void:
 			show_settings(), P.data.station == r.id))
 	v.add_child(rrow)
 	v.add_child(HSeparator.new())
-	v.add_child(_lbl("Keyboard: WASD/arrows · SPACE handbrake · SHIFT nitrous · 1/2/3 weapon slots (F/H too) · Q inventory · Z warp · G god mode (EASY) · Y nuke police (EASY) · E EMP · K spikes · R roadblock · T turbo · C camera · X reset · M radio · ESC pause", 12, GREY))
+	v.add_child(_lbl("Keyboard: WASD/arrows · SPACE jump (×2 double) · CTRL handbrake · SHIFT nitrous · 1/2/3 weapon slots (F/H too) · Q inventory · Z warp · G god mode (EASY) · Y nuke police (EASY) · E EMP · K spikes · R roadblock · T turbo · C camera · X reset · M radio · ESC pause", 12, GREY))
 	v.add_child(_lbl("Controller: RT throttle · LT brake · Left stick steer · X handbrake · A nitrous · LS-click/Y/RB weapon slots · D-pad left warp · B turbo · LB spikes · Back camera · D-pad up reset · Start pause", 12, GREY))
 	v.add_child(_btn("RESET ALL PROGRESS", _confirm_reset.bind()))
 	_focus_first()

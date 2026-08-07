@@ -29,7 +29,8 @@ If the window opens black or crashes on an older PC: in Godot go to
 | W / ↑ | Accelerate |
 | S / ↓ | Brake / reverse |
 | A·D / ←·→ | Steer |
-| SPACE | Handbrake — hold + steer to drift |
+| SPACE | Jump — tap again mid-air for a double jump |
+| CTRL | Handbrake — hold + steer to drift |
 | B / V | Gear up / down *(manual transmission mode)* |
 | SHIFT / N | Nitrous |
 | F / G / H | Fire weapon slots 1-3 *(pick your 3 in Main Menu → WEAPONS)* |

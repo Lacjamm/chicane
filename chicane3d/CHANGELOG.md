@@ -1,6 +1,12 @@
 # CHANGELOG — Chicane: Full Throttle 3D
 
-## v9.11 (this build)
+## v9.12 (this build)
+**SPACE to jump, tap again for a double jump.** Grounded tap launches
+the car; a second tap mid-air gives a stronger second kick with a
+nose-up flourish. Handbrake (and drifting) moved from SPACE to CTRL —
+pad layout unchanged except jump landing on LB.
+
+## v9.11
 **[G] GOD MODE hotkey (EASY level):** every race on EASY starts with a
 flashing "PRESS [G] FOR GOD MODE" hint. Press it and: your car snaps
 back to the middle of the road on the straight path to the finish, you
