@@ -1,0 +1,11 @@
+Model Information:
+* title:	Lamborghini Huracan GT3
+* source:	https://sketchfab.com/3d-models/lamborghini-huracan-gt3-96b91c8d81ba4152bb4c7e3c0e59a110
+* author:	toddeppe (https://sketchfab.com/toddeppe)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Lamborghini Huracan GT3" (https://sketchfab.com/3d-models/lamborghini-huracan-gt3-96b91c8d81ba4152bb4c7e3c0e59a110) by toddeppe (https://sketchfab.com/toddeppe) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

@@ -1,0 +1,11 @@
+Model Information:
+* title:	2015 Koenigsegg Agera RS (Exposed Carbon Fiber)
+* source:	https://sketchfab.com/3d-models/2015-koenigsegg-agera-rs-exposed-carbon-fiber-fcfddb30f72c4c228da56b019dec18c6
+* author:	Ddiaz Design (https://sketchfab.com/ddiaz-design)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "2015 Koenigsegg Agera RS (Exposed Carbon Fiber)" (https://sketchfab.com/3d-models/2015-koenigsegg-agera-rs-exposed-carbon-fiber-fcfddb30f72c4c228da56b019dec18c6) by Ddiaz Design (https://sketchfab.com/ddiaz-design) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

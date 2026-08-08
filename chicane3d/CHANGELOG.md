@@ -1,6 +1,16 @@
 # CHANGELOG — Chicane: Full Throttle 3D
 
-## v9.15 (this build)
+## v9.16 (this build)
+**Every car model now ships with the game:** the remaining 14 packs
+(all Aegir and Vala bodyworks, both VCPD patrol hypercars, Vitesse
+Divergent and Boulder Track, Tempesta V12/Volt/Retro, Goblin, Cinder)
+are bundled in `cars/` and install themselves on first launch — no more
+separate model zips. Also fixes the Lacjamm Custom driving boot-first.
+
+**New bodywork: Tempesta SVJ — GT3 Corsa**, a race-liveried GT3 build
+of the Tempesta in the garage bodywork picker.
+
+## v9.15
 **New car: Lacjamm Custom** — a $92,000 Custom Sports coupe in the
 dealership, built around a hand-made Blender model (bundled in
 `cars/porrshe_blender/`, installed automatically). Balanced mid-field:

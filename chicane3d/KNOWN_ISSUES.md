@@ -1,6 +1,7 @@
 # Known issues & honest limitations
 
-- Model packs are separate zips (30 MB transfer limit). Without them the
+- All model packs are bundled in the repo's `cars/` folder and install
+  themselves into `assets/models/` at first launch. Without them the
   game uses procedural bodies for everything — fully playable by design.
 - Wheels on some imported models in the ORIGINAL high-poly packs are one
   fused mesh (agera11*, one1, both patrol cars, aventador, countach,

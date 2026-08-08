@@ -1,0 +1,11 @@
+Model Information:
+* title:	2021 Czinger 21C
+* source:	https://sketchfab.com/3d-models/2021-czinger-21c-ae818ca6c7244a8db4bfe5465f24bbd6
+* author:	Ddiaz Design (https://sketchfab.com/ddiaz-design)
+
+Model License:
+* license type:	CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)
+* requirements:	Author must be credited. No commercial use.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "2021 Czinger 21C" (https://sketchfab.com/3d-models/2021-czinger-21c-ae818ca6c7244a8db4bfe5465f24bbd6) by Ddiaz Design (https://sketchfab.com/ddiaz-design) licensed under CC-BY-NC-4.0 (http://creativecommons.org/licenses/by-nc/4.0/)

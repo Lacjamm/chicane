@@ -23,6 +23,13 @@ no real-world branding is used in game data or UI.
 | aventador, revuelto, countach | Tempesta SVJ — V12 / Volt / Retro bodyworks |
 | camaro_gs | Marauder GS-R (Muscle Racer) |
 
+## v9.16 additions
+| folder | in-game |
+|---|---|
+| huracan_gt3 | Tempesta SVJ — GT3 Corsa bodywork |
+| porrshe_blender | Lacjamm Custom (hand-made in Blender by the project owner) |
+| police_car | VCPD cruiser (all police ranks) |
+
 ## v7 additions
 | folder | in-game |
 |---|---|
