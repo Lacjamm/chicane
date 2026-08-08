@@ -1,6 +1,12 @@
 # CHANGELOG — Chicane: Full Throttle 3D
 
-## v9.14 (this build)
+## v9.15 (this build)
+**New car: Lacjamm Custom** — a $92,000 Custom Sports coupe in the
+dealership, built around a hand-made Blender model (bundled in
+`cars/porrshe_blender/`, installed automatically). Balanced mid-field:
+strong handling and drift, modest top speed, heat 3.
+
+## v9.14
 **Bundled car models:** the `cars/` folder in the repo is now the model
 source — its eight packs (Marauder GS-R ×2, Ion GT-e, Aegir Konung Jarl
 Attack, Talon GT3-R, Vitesse Royale Tourbillon, Wolf Compact, VCPD

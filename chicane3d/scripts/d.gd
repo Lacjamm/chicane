@@ -57,6 +57,8 @@ const CARS := [
 		"skins":["czinger"]},
 	{"id":"wolf",    "name":"Wolf Compact",     "cls":"Compact",         "price":16000,  "top":4.6,"acc":5.0,"hand":6.8,"drift":5.0,"str":6.0,"nitro":4.5,"heat":1, "shape":{"len":4.1,"wid":1.9,"nose":0.9,"tail":0.9,"wing":0.1},
 		"skins":["vw_lp"]},
+	{"id":"lacjamm", "name":"Lacjamm Custom",   "cls":"Custom Sports",   "price":92000,  "top":6.6,"acc":7.2,"hand":8.0,"drift":6.5,"str":6.0,"nitro":6.0,"heat":3, "shape":{"len":4.5,"wid":1.9,"nose":0.9,"tail":0.8,"wing":0.2},
+		"skins":["porrshe_blender"]},
 ]
 
 const SECRET_CARS := [
@@ -138,6 +140,7 @@ const MODEL_SKINS := {
 	"agera_r_cop":  {"name":"Patrol Valkyr", "path":"res://assets/models/agera_r_cop/scene.gltf",  "yaw":0.0},
 	"one1_cop":     {"name":"Patrol One",    "path":"res://assets/models/one1_cop/scene.gltf",     "yaw":0.0},
 	"police_car":   {"name":"VCPD Cruiser",  "path":"res://assets/models/police_car/police_car.glb", "yaw":0.0},
+	"porrshe_blender": {"name":"Lacjamm Custom", "path":"res://assets/models/porrshe_blender/porsche_911_turbo.glb", "yaw":0.0},
 	"divo":         {"name":"Divergent",     "path":"res://assets/models/divo/scene.gltf",         "yaw":0.0},
 	"bolide":       {"name":"Boulder Track", "path":"res://assets/models/bolide/scene.gltf",       "yaw":0.0},
 	"i8":           {"name":"Ion Coupe",     "path":"res://assets/models/i8/scene.gltf",           "yaw":0.0},
