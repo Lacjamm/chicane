@@ -1,6 +1,14 @@
 # CHANGELOG — Chicane: Full Throttle 3D
 
-## v9.12 (this build)
+## v9.13 (this build)
+**Real police car model:** every VCPD unit now uses the imported
+`police_car` 3D model when it is installed (`assets/models/police_car/`),
+complete with the flashing red/blue lightbar — which now also works on
+imported bodies, not just procedural ones. The rank-10 Valkyr Unit keeps
+its dedicated patrol-hypercar models and falls back to the cruiser.
+Without the model installed, cops keep their procedural bodies as before.
+
+## v9.12
 **Branded loading screen for the web version:** the browser build now
 boots into a Chicane-styled loader — neon title, live download bar with
 MB and % readout, a shimmer state while the engine compiles, rotating

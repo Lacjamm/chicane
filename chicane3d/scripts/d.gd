@@ -69,13 +69,18 @@ const SECRET_CARS := [
 ]
 
 const COP_CARS := [
-	{"id":"cop1","name":"VCPD Interceptor GT","rank":1,"top":6.5,"acc":6.5,"hand":7.0,"drift":5.0,"str":8.5,"nitro":6.0,"shape":{"len":4.7,"wid":2.0,"nose":0.9,"tail":0.7,"wing":0.3}},
-	{"id":"cop2","name":"VCPD Enforcer SVJ",  "rank":3,"top":7.5,"acc":7.5,"hand":8.0,"drift":5.5,"str":9.0,"nitro":7.0,"shape":{"len":4.9,"wid":2.1,"nose":1.3,"tail":0.5,"wing":0.8}},
-	{"id":"cop3","name":"VCPD Pursuit RG-1",  "rank":5,"top":8.4,"acc":9.2,"hand":7.5,"drift":5.0,"str":9.0,"nitro":8.0,"shape":{"len":4.6,"wid":2.05,"nose":1.0,"tail":0.7,"wing":0.4}},
-	{"id":"cop4","name":"VCPD Guardian One",  "rank":7,"top":9.0,"acc":9.0,"hand":9.0,"drift":5.5,"str":9.5,"nitro":8.5,"shape":{"len":4.8,"wid":2.05,"nose":1.2,"tail":0.5,"wing":0.7}},
-	{"id":"cop5","name":"VCPD Lockdown J-90", "rank":9,"top":9.8,"acc":9.5,"hand":8.5,"drift":6.0,"str":10.0,"nitro":9.5,"shape":{"len":4.6,"wid":2.05,"nose":1.1,"tail":0.6,"wing":0.9}},
+	{"id":"cop1","name":"VCPD Interceptor GT","rank":1,"top":6.5,"acc":6.5,"hand":7.0,"drift":5.0,"str":8.5,"nitro":6.0,"shape":{"len":4.7,"wid":2.0,"nose":0.9,"tail":0.7,"wing":0.3},
+		"skins":["police_car"]},
+	{"id":"cop2","name":"VCPD Enforcer SVJ",  "rank":3,"top":7.5,"acc":7.5,"hand":8.0,"drift":5.5,"str":9.0,"nitro":7.0,"shape":{"len":4.9,"wid":2.1,"nose":1.3,"tail":0.5,"wing":0.8},
+		"skins":["police_car"]},
+	{"id":"cop3","name":"VCPD Pursuit RG-1",  "rank":5,"top":8.4,"acc":9.2,"hand":7.5,"drift":5.0,"str":9.0,"nitro":8.0,"shape":{"len":4.6,"wid":2.05,"nose":1.0,"tail":0.7,"wing":0.4},
+		"skins":["police_car"]},
+	{"id":"cop4","name":"VCPD Guardian One",  "rank":7,"top":9.0,"acc":9.0,"hand":9.0,"drift":5.5,"str":9.5,"nitro":8.5,"shape":{"len":4.8,"wid":2.05,"nose":1.2,"tail":0.5,"wing":0.7},
+		"skins":["police_car"]},
+	{"id":"cop5","name":"VCPD Lockdown J-90", "rank":9,"top":9.8,"acc":9.5,"hand":8.5,"drift":6.0,"str":10.0,"nitro":9.5,"shape":{"len":4.6,"wid":2.05,"nose":1.1,"tail":0.6,"wing":0.9},
+		"skins":["police_car"]},
 	{"id":"cop6","name":"VCPD Valkyr Unit",  "rank":10,"top":9.9,"acc":9.6,"hand":8.8,"drift":6.0,"str":10.0,"nitro":9.5,"shape":{"len":4.5,"wid":2.05,"nose":1.0,"tail":0.6,"wing":0.7},
-		"skins":["agera_r_cop","one1_cop"]},
+		"skins":["agera_r_cop","one1_cop","police_car"]},
 ]
 
 const PAINTS := ["e8192c","ff6a00","ffd400","3ddc47","00e5d0","1e90ff","7b4dff","ff3dbf","f2f2f2","151515","8a99a8","c47a2c"]
@@ -132,6 +137,7 @@ const MODEL_SKINS := {
 	"one1":         {"name":"Aegir One",     "path":"res://assets/models/one1/scene.gltf",         "yaw":0.0},
 	"agera_r_cop":  {"name":"Patrol Valkyr", "path":"res://assets/models/agera_r_cop/scene.gltf",  "yaw":0.0},
 	"one1_cop":     {"name":"Patrol One",    "path":"res://assets/models/one1_cop/scene.gltf",     "yaw":0.0},
+	"police_car":   {"name":"VCPD Cruiser",  "path":"res://assets/models/police_car/police_car.glb", "yaw":0.0},
 	"divo":         {"name":"Divergent",     "path":"res://assets/models/divo/scene.gltf",         "yaw":0.0},
 	"bolide":       {"name":"Boulder Track", "path":"res://assets/models/bolide/scene.gltf",       "yaw":0.0},
 	"i8":           {"name":"Ion Coupe",     "path":"res://assets/models/i8/scene.gltf",           "yaw":0.0},

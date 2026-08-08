@@ -149,6 +149,29 @@ static func build_hull(L: float, W: float, nose_drop: float, tail_h: float, cabi
 	st.generate_normals()
 	return st.commit()
 
+# Roof lightbar shared by procedural and imported police bodies. Children
+# "red"/"blue"/"flash" are driven by the flashing loop in vehicle_base.gd.
+static func police_lightbar(W: float) -> Node3D:
+	var bar := Node3D.new(); bar.name = "lightbar"
+	var base := MeshInstance3D.new()
+	var bb := BoxMesh.new(); bb.size = Vector3(W * 0.5, 0.09, 0.22)
+	base.mesh = bb; base.material_override = trim_material()
+	bar.add_child(base)
+	var red := MeshInstance3D.new()
+	var rb := BoxMesh.new(); rb.size = Vector3(W * 0.22, 0.08, 0.2)
+	red.mesh = rb; red.material_override = emissive(Color(1, 0.05, 0.05), 4.0)
+	red.position.x = -W * 0.13; red.name = "red"
+	bar.add_child(red)
+	var blue := red.duplicate()
+	blue.material_override = emissive(Color(0.1, 0.25, 1), 4.0)
+	blue.position.x = W * 0.13; blue.name = "blue"
+	bar.add_child(blue)
+	var flash := OmniLight3D.new()
+	flash.name = "flash"; flash.position.y = 0.4
+	flash.light_energy = 2.0; flash.omni_range = 14.0
+	bar.add_child(flash)
+	return bar
+
 # Full car visual. shape: {len, wid, nose, tail, wing}; police adds lightbar/livery.
 # Returns Node3D with named children; meta "panels" lists deformable MeshInstance3D.
 static func build_visual(hex: String, finish: String, shape: Dictionary, police := false) -> Node3D:
@@ -282,24 +305,8 @@ static func build_visual(hex: String, finish: String, shape: Dictionary, police 
 		var stripe := panel("stripe", Vector3(W * 1.001, 0.14, L * 0.5), Vector3(0, 0.42, 0.05), paint_material("0a1f66", "gloss"), 0.22, 0.0, 2)
 		root.add_child(stripe); panels.append(stripe)
 		# lightbar
-		var bar := Node3D.new(); bar.name = "lightbar"; bar.position = Vector3(0, 1.06, 0.1)
-		var base := MeshInstance3D.new()
-		var bb := BoxMesh.new(); bb.size = Vector3(W * 0.5, 0.09, 0.22)
-		base.mesh = bb; base.material_override = trim
-		bar.add_child(base)
-		var red := MeshInstance3D.new()
-		var rb := BoxMesh.new(); rb.size = Vector3(W * 0.22, 0.08, 0.2)
-		red.mesh = rb; red.material_override = emissive(Color(1, 0.05, 0.05), 4.0)
-		red.position.x = -W * 0.13; red.name = "red"
-		bar.add_child(red)
-		var blue := red.duplicate()
-		blue.material_override = emissive(Color(0.1, 0.25, 1), 4.0)
-		blue.position.x = W * 0.13; blue.name = "blue"
-		bar.add_child(blue)
-		var flash := OmniLight3D.new()
-		flash.name = "flash"; flash.position.y = 0.4
-		flash.light_energy = 2.0; flash.omni_range = 14.0
-		bar.add_child(flash)
+		var bar := police_lightbar(W)
+		bar.position = Vector3(0, 1.06, 0.1)
 		root.add_child(bar)
 		# bullbar
 		var bull := MeshInstance3D.new()
@@ -472,7 +479,7 @@ static func _is_wheel_name(n: String) -> bool:
 			return true
 	return false
 
-static func build_model_visual(skin_id: String, shape: Dictionary) -> Node3D:
+static func build_model_visual(skin_id: String, shape: Dictionary, police := false) -> Node3D:
 	var skin: Dictionary = D.MODEL_SKINS.get(skin_id, {})
 	var root := Node3D.new()
 	root.name = "Visual"
@@ -480,11 +487,11 @@ static func build_model_visual(skin_id: String, shape: Dictionary) -> Node3D:
 	# defensive: never try to load an uninstalled model pack
 	if not FileAccess.file_exists(str(skin.get("path", ""))):
 		push_warning("Model skin '%s' not installed — using procedural body. (Install the model pack zips to enable it.)" % skin_id)
-		return build_visual("8a99a8", "gloss", shape)
+		return build_visual("f2f2f2" if police else "8a99a8", "gloss", shape, police)
 	var ps := _skin_scene(str(skin.get("path", "")))
 	if ps == null or not ps.can_instantiate():
 		push_warning("model skin missing: " + skin_id)
-		return build_visual("8a99a8", "gloss", shape)
+		return build_visual("f2f2f2" if police else "8a99a8", "gloss", shape, police)
 	var inst: Node3D = ps.instantiate()
 	# multi-car packs: keep only the named subtree, drop its siblings
 	var only := str(skin.get("only", ""))
@@ -585,4 +592,9 @@ static func build_model_visual(skin_id: String, shape: Dictionary) -> Node3D:
 	else:
 		# leave the model intact and sit it on its tyres
 		container.position.y = -(rmin.y * s) - 0.34
+	if police:
+		# flashing lightbar on the roof (highest point of the scaled body)
+		var bar := police_lightbar(float(shape.get("wid", 2.0)))
+		bar.position = Vector3(0, container.position.y + rmax.y * s + 0.05, 0.05)
+		root.add_child(bar)
 	return root

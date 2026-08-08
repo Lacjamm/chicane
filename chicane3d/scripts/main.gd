@@ -174,7 +174,7 @@ func _scan_packs(path: String, depth: int, wanted: Dictionary, dest_root: String
 	while n != "":
 		if d.current_is_dir() and not n.begins_with("."):
 			var sub := path + "/" + n
-			if wanted.has(n) and FileAccess.file_exists(sub + "/scene.gltf"):
+			if wanted.has(n) and FileAccess.file_exists(sub + "/" + str(D.MODEL_SKINS[n].path).get_file()):
 				if _copy_dir(sub, dest_root + "/" + n):
 					copied += 1
 					wanted.erase(n)

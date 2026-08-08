@@ -100,7 +100,7 @@ func _make_visual() -> Node3D:
 				use_skin = str(s2)
 				break
 	if use_skin != "" and use_skin != "proc" and D.skin_ok(use_skin):
-		return CarFactory.build_model_visual(use_skin, _vis.shape)
+		return CarFactory.build_model_visual(use_skin, _vis.shape, _vis.police)
 	return CarFactory.build_visual(_vis.paint, _vis.finish, _vis.shape, _vis.police)
 
 # v9.7 — respawn support: throw away the crumpled/burnt body and build a
