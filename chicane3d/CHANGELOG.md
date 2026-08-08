@@ -1,6 +1,16 @@
 # CHANGELOG — Chicane: Full Throttle 3D
 
-## v9.13 (this build)
+## v9.14 (this build)
+**Bundled car models:** the `cars/` folder in the repo is now the model
+source — its eight packs (Marauder GS-R ×2, Ion GT-e, Aegir Konung Jarl
+Attack, Talon GT3-R, Vitesse Royale Tourbillon, Wolf Compact, VCPD
+Cruiser) install themselves into `assets/models/` on first launch.
+Every car with a bundled model now uses it as its default bodywork:
+the Aegir Konung defaults to Jarl Attack and the Vitesse Royale to
+Tourbillon (garage picks you already made are untouched; all other
+bodywork options remain when their packs are installed).
+
+## v9.13
 **Real police car model:** every VCPD unit now uses the imported
 `police_car` 3D model when it is installed (`assets/models/police_car/`),
 complete with the flashing red/blue lightbar — which now also works on

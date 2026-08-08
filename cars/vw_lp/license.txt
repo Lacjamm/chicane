@@ -1,0 +1,11 @@
+Model Information:
+* title:	Low Poly Volkswagen
+* source:	https://sketchfab.com/3d-models/low-poly-volkswagen-24db62db678548f9a07b90b57fb1abbd
+* author:	LEON elenaisakova248 (https://sketchfab.com/elenaisakova248)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "Low Poly Volkswagen" (https://sketchfab.com/3d-models/low-poly-volkswagen-24db62db678548f9a07b90b57fb1abbd) by LEON elenaisakova248 (https://sketchfab.com/elenaisakova248) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
