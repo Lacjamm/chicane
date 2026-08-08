@@ -41,7 +41,5 @@ window/size/viewport_height=720
 
 [rendering]
 
-; web export must use the GL Compatibility renderer (WebGL2)
-renderer/rendering_method.web="gl_compatibility"
 anti_aliasing/quality/msaa_3d=2
 environment/defaults/default_clear_color=Color(0.02, 0.01, 0.05, 1)
